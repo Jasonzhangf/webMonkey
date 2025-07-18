@@ -6,6 +6,34 @@
 echo "🚀 Web Automation Orchestrator 项目初始化"
 echo "=========================================="
 
+# GitHub 仓库设置
+echo "📋 GitHub 仓库设置说明"
+echo "----------------------"
+echo "请按照以下步骤创建 GitHub 仓库："
+echo ""
+echo "方法1: 使用 GitHub CLI (推荐)"
+echo "1. 登录 GitHub CLI: gh auth login"
+echo "2. 创建仓库: gh repo create web-automation-orchestrator --public --description '动态网页操作自动化工具 - 综合性浏览器自动化平台'"
+echo "3. 推送代码: git push -u origin main"
+echo ""
+echo "方法2: 手动创建"
+echo "1. 访问 https://github.com/new"
+echo "2. 仓库名称: web-automation-orchestrator"
+echo "3. 描述: 动态网页操作自动化工具 - 综合性浏览器自动化平台"
+echo "4. 选择 Public"
+echo "5. 不要初始化 README (我们已经有了)"
+echo "6. 创建后，复制仓库 URL"
+echo "7. 运行: git remote add origin <你的仓库URL>"
+echo "8. 运行: git push -u origin main"
+echo ""
+read -p "是否继续项目环境设置? (y/n): " -n 1 -r
+echo
+if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    echo "项目初始化已暂停。完成 GitHub 仓库设置后，请重新运行此脚本。"
+    exit 0
+fi
+echo ""
+
 # 检查Node.js
 if ! command -v node &> /dev/null; then
     echo "❌ Node.js 未安装，请先安装 Node.js 18.0+"

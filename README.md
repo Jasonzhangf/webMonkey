@@ -95,10 +95,24 @@ web-automation-orchestrator/
 
 ## 快速开始
 
-### 1. 克隆项目
+### 1. 获取项目
+
+#### 如果你是从现有仓库克隆:
 ```bash
 git clone https://github.com/your-username/web-automation-orchestrator.git
 cd web-automation-orchestrator
+```
+
+#### 如果你是项目创建者，需要设置 GitHub 仓库:
+```bash
+# 运行 GitHub 仓库设置脚本
+./github-setup.sh
+
+# 或者手动设置 (如果没有 GitHub CLI)
+# 1. 在 GitHub 上创建名为 'web-automation-orchestrator' 的仓库
+# 2. 然后运行:
+git remote add origin https://github.com/your-username/web-automation-orchestrator.git
+git push -u origin main
 ```
 
 ### 2. 安装依赖
