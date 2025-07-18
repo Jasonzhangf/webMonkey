@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web Automation Orchestrator - 测试控制台</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 10px;
+    }
+    .container {
+      display: flex;
+      gap: 20px;
+    }
+    .panel {
+      flex: 1;
+      background: white;
+      border-radius: 8px;
+      padding: 15px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h2 {
+      margin-top: 0;
+      color: #4CAF50;
+    }
+    .log-container {
+      height: 500px;
+      overflow-y: auto;
+      background: #f9f9f9;
+      border: 1px solid #eee;
+      border-radius: 4px;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 12px;
+    }
+    .log-entry {
+      margin-bottom: 8px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #eee;
+    }
+    .log-time {
+      color: #999;
+      font-size: 11px;
+    }
+    .log-received {
+      color: #2196F3;
+    }
+    .log-sent {
+      color: #4CAF50;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+    }
+    select, input, textarea {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    textarea {
+      height: 100px;
+      font-family: monospace;
+    }
+    button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    button:hover {
+      background: #45a049;
+    }
+    .template-select {
+      margin-bottom: 15px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Web Automation Orchestrator - 测试控制台</h1>
+  
+  <div class="container">
+    <div class="panel">
+      <h2>消息日志</h2>
+      <div class="log-container" id="log-container"></div>
+      <div style="margin-top: 10px;">
+        <button onclick="clearLogs()">清除日志</button>
+        <button onclick="refreshLogs()">刷新日志</button>
+      </div>
+    </div>
+    
+    <div class="panel">
+      <h2>发送测试消息</h2>
+      
+      <div class="template-select">
+        <label>选择消息模板:</label>
+        <select id="template-select" onchange="loadTemplate()">
+          <option value="">-- 选择模板 --</option>
+          <option value="node_connection_request">节点连接请求</option>
+          <option value="node_update">节点更新</option>
+          <option value="connection_status">连接状态</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label>消息内容 (JSON):</label>
+        <textarea id="message-content">{
+  "id": "",
+  "type": "",
+  "timestamp": "",
+  "source": "orchestrator",
+  "target": "plugin",
+  "payload": {}
+}</textarea>
+      </div>
+      
+      <button onclick="sendMessage()">发送消息</button>
+    </div>
+  </div>
+  
+  <script>
+    // 存储当前标签页ID
+    let currentTabId = null;
+    
+    // 获取当前标签页ID
+    async function getCurrentTabId() {
+      try {
+        // 尝试通过消息获取当前标签页ID
+        const response = await fetch('/current-tab-id');
+        const data = await response.json();
+        if (data.tabId) {
+          currentTabId = data.tabId;
+          return data.tabId;
+        }
+      } catch (error) {
+        console.error('Failed to get current tab ID:', error);
+      }
+      
+      // 如果无法获取，返回默认值或存储的值
+      return currentTabId || 1;
+    }
+    
+    // 消息模板
+    const templates = {
+      node_connection_request: {
+        id: generateId(),
+        type: 'node_connection_request',
+        timestamp: new Date().toISOString(),
+        source: 'orchestrator',
+        target: 'plugin',
+        payload: {
+          node_id: 'test-node-001',
+          node_type: 'universal_action',
+          connection_mode: 'element_selection',
+          tab_id: getCurrentTabId() // 自动获取当前标签页ID
+        }
+      },
+      node_update: {
+        id: generateId(),
+        type: 'node_update',
+        timestamp: new Date().toISOString(),
+        source: 'orchestrator',
+        target: 'plugin',
+        node_id: 'test-node-001',
+        payload: {
+          node_id: 'test-node-001',
+          updates: {
+            property: 'value',
+            status: 'active'
+          }
+        }
+      },
+      connection_status: {
+        id: generateId(),
+        type: 'connection_status',
+        timestamp: new Date().toISOString(),
+        source: 'orchestrator',
+        target: 'plugin',
+        node_id: 'test-node-001',
+        payload: {
+          node_id: 'test-node-001',
+          status: 'connected'
+        }
+      }
+    };
+    
+    // 生成唯一ID
+    function generateId() {
+      return Math.random().toString(36).substring(2, 15) + 
+             Math.random().toString(36).substring(2, 15);
+    }
+    
+    // 加载消息模板
+    function loadTemplate() {
+      const select = document.getElementById('template-select');
+      const templateName = select.value;
+      
+      if (templateName && templates[templateName]) {
+        const template = templates[templateName];
+        template.id = generateId();
+        template.timestamp = new Date().toISOString();
+        
+        document.getElementById('message-content').value = JSON.stringify(template, null, 2);
+      }
+    }
+    
+    // 发送消息
+    function sendMessage() {
+      const content = document.getElementById('message-content').value;
+      
+      try {
+        const message = JSON.parse(content);
+        
+        fetch('/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(message)
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            alert('消息已发送');
+            refreshLogs();
+          } else {
+            alert('发送失败: ' + data.error);
+          }
+        })
+        .catch(error => {
+          alert('发送失败: ' + error);
+        });
+        
+      } catch (error) {
+        alert('JSON格式错误: ' + error);
+      }
+    }
+    
+    // 刷新日志
+    function refreshLogs() {
+      fetch('/logs')
+        .then(response => response.json())
+        .then(logs => {
+          const container = document.getElementById('log-container');
+          container.innerHTML = '';
+          
+          logs.forEach(log => {
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            
+            const time = document.createElement('div');
+            time.className = 'log-time';
+            time.textContent = new Date(log.time).toLocaleTimeString();
+            
+            const direction = document.createElement('div');
+            direction.className = log.direction === 'received' ? 'log-received' : 'log-sent';
+            direction.textContent = log.direction === 'received' ? '← 收到' : '→ 发送';
+            
+            const content = document.createElement('pre');
+            content.textContent = JSON.stringify(log.message, null, 2);
+            
+            entry.appendChild(time);
+            entry.appendChild(direction);
+            entry.appendChild(content);
+            container.appendChild(entry);
+          });
+          
+          // 滚动到底部
+          container.scrollTop = container.scrollHeight;
+        })
+        .catch(error => {
+          console.error('获取日志失败:', error);
+        });
+    }
+    
+    // 清除日志
+    function clearLogs() {
+      fetch('/clear-logs', { method: 'POST' })
+        .then(() => {
+          document.getElementById('log-container').innerHTML = '';
+        })
+        .catch(error => {
+          console.error('清除日志失败:', error);
+        });
+    }
+    
+    // 页面加载时刷新日志
+    window.onload = refreshLogs;
+    
+    // 定期刷新日志
+    setInterval(refreshLogs, 5000);
+  </script>
+</body>
+</html>

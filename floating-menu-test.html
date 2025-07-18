@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>浮动菜单测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .wao-floating-menu {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            user-select: none;
+            z-index: 2147483647;
+            width: 220px;
+        }
+        
+        .wao-menu-handle {
+            cursor: move;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        
+        .wao-menu-title {
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .wao-menu-controls {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .wao-menu-control-button {
+            width: 20px;
+            height: 20px;
+            padding: 0;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 14px;
+            line-height: 1;
+            transition: background 0.2s ease;
+        }
+        
+        .wao-menu-control-button:hover {
+            background: #e0e0e0;
+        }
+        
+        .wao-menu-content {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .wao-status {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .wao-menu-button {
+            padding: 8px 12px;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.2s ease;
+            font-weight: normal;
+            text-align: center;
+            font-size: 14px;
+        }
+        
+        .wao-menu-button:hover {
+            filter: brightness(1.1);
+        }
+        
+        .wao-menu-button:active {
+            filter: brightness(0.9);
+        }
+        
+        .wao-capture-button {
+            background: #4CAF50;
+        }
+        
+        .wao-settings-button {
+            background: #2196F3;
+        }
+        
+        .wao-help-button {
+            background: #9E9E9E;
+        }
+        
+        .wao-test-area {
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        
+        .wao-test-element {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .wao-test-element:hover {
+            background-color: #f9f9f9;
+        }
+        
+        .wao-highlight {
+            outline: 2px solid #4CAF50;
+            outline-offset: 2px;
+            background-color: rgba(76, 175, 80, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <h1>浮动菜单测试</h1>
+    
+    <div class="wao-test-area">
+        <h2>测试区域</h2>
+        <p>这里是一些测试元素，可以用来测试元素选择功能。</p>
+        
+        <div class="wao-test-element" id="element1">测试元素 1</div>
+        <div class="wao-test-element" id="element2">测试元素 2</div>
+        <div class="wao-test-element" id="element3">测试元素 3</div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 创建浮动菜单
+            createFloatingMenu();
+            
+            // 添加测试元素的点击事件
+            const testElements = document.querySelectorAll('.wao-test-element');
+            testElements.forEach(element => {
+                element.addEventListener('click', function() {
+                    testElements.forEach(el => el.classList.remove('wao-highlight'));
+                    this.classList.add('wao-highlight');
+                });
+            });
+        });
+        
+        function createFloatingMenu() {
+            // 创建菜单容器
+            const menu = document.createElement('div');
+            menu.className = 'wao-floating-menu';
+            
+            // 添加拖动手柄
+            const handle = document.createElement('div');
+            handle.className = 'wao-menu-handle';
+            menu.appendChild(handle);
+            
+            // 添加标题
+            const title = document.createElement('div');
+            title.className = 'wao-menu-title';
+            title.textContent = '网页自动化助手';
+            handle.appendChild(title);
+            
+            // 添加控制按钮组
+            const controls = document.createElement('div');
+            controls.className = 'wao-menu-controls';
+            handle.appendChild(controls);
+            
+            // 添加折叠/展开按钮
+            const collapseBtn = document.createElement('button');
+            collapseBtn.innerHTML = '&#8722;'; // 减号符号
+            collapseBtn.className = 'wao-menu-control-button';
+            collapseBtn.title = '折叠菜单';
+            collapseBtn.onclick = toggleCollapse;
+            controls.appendChild(collapseBtn);
+            
+            // 添加关闭按钮
+            const closeBtn = document.createElement('button');
+            closeBtn.innerHTML = '&#10005;'; // X符号
+            closeBtn.className = 'wao-menu-control-button';
+            closeBtn.title = '隐藏菜单';
+            closeBtn.onclick = () => menu.remove();
+            controls.appendChild(closeBtn);
+            
+            // 添加内容容器
+            const content = document.createElement('div');
+            content.className = 'wao-menu-content';
+            menu.appendChild(content);
+            
+            // 添加状态指示器
+            const status = document.createElement('div');
+            status.className = 'wao-status';
+            status.textContent = '⏸️ 捕获模式未激活';
+            content.appendChild(status);
+            
+            // 添加捕获按钮
+            const captureBtn = document.createElement('button');
+            captureBtn.textContent = '开始捕获';
+            captureBtn.className = 'wao-menu-button wao-capture-button';
+            captureBtn.onclick = toggleCapture;
+            content.appendChild(captureBtn);
+            
+            // 添加设置按钮
+            const settingsBtn = document.createElement('button');
+            settingsBtn.textContent = '设置';
+            settingsBtn.className = 'wao-menu-button wao-settings-button';
+            content.appendChild(settingsBtn);
+            
+            // 添加帮助按钮
+            const helpBtn = document.createElement('button');
+            helpBtn.textContent = '帮助';
+            helpBtn.className = 'wao-menu-button wao-help-button';
+            content.appendChild(helpBtn);
+            
+            // 添加拖动功能
+            let isDragging = false;
+            let dragOffset = { x: 0, y: 0 };
+            
+            handle.addEventListener('mousedown', function(e) {
+                isDragging = true;
+                
+                const rect = menu.getBoundingClientRect();
+                dragOffset = {
+                    x: e.clientX - rect.left,
+                    y: e.clientY - rect.top
+                };
+                
+                e.preventDefault();
+            });
+            
+            document.addEventListener('mousemove', function(e) {
+                if (!isDragging) return;
+                
+                const x = e.clientX - dragOffset.x;
+                const y = e.clientY - dragOffset.y;
+                
+                const menuWidth = menu.offsetWidth;
+                const menuHeight = menu.offsetHeight;
+                const maxX = window.innerWidth - menuWidth;
+                const maxY = window.innerHeight - menuHeight;
+                
+                menu.style.left = `${Math.max(0, Math.min(x, maxX))}px`;
+                menu.style.top = `${Math.max(0, Math.min(y, maxY))}px`;
+                menu.style.right = 'auto';
+            });
+            
+            document.addEventListener('mouseup', function() {
+                isDragging = false;
+            });
+            
+            // 添加到页面
+            document.body.appendChild(menu);
+            
+            // 折叠/展开功能
+            function toggleCollapse() {
+                const isCollapsed = content.style.display === 'none';
+                
+                if (isCollapsed) {
+                    // 展开
+                    content.style.display = 'flex';
+                    menu.style.width = '220px';
+                    collapseBtn.innerHTML = '&#8722;'; // 减号符号
+                    collapseBtn.title = '折叠菜单';
+                } else {
+                    // 折叠
+                    content.style.display = 'none';
+                    menu.style.width = '180px';
+                    collapseBtn.innerHTML = '&#43;'; // 加号符号
+                    collapseBtn.title = '展开菜单';
+                }
+            }
+            
+            // 切换捕获模式
+            function toggleCapture() {
+                const isActive = status.textContent.includes('已激活');
+                
+                if (isActive) {
+                    // 停止捕获
+                    status.textContent = '⏸️ 捕获模式未激活';
+                    status.style.color = '#666';
+                    captureBtn.textContent = '开始捕获';
+                    captureBtn.className = 'wao-menu-button wao-capture-button';
+                    captureBtn.style.background = '#4CAF50';
+                } else {
+                    // 开始捕获
+                    status.textContent = '✅ 捕获模式已激活';
+                    status.style.color = '#4CAF50';
+                    captureBtn.textContent = '停止捕获';
+                    captureBtn.className = 'wao-menu-button';
+                    captureBtn.style.background = '#f44336';
+                }
+            }
+        }
+    </script>
+</body>
+</html>
