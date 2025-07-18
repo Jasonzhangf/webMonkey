@@ -183,7 +183,7 @@ export interface WebSocketConnection {
 }
 
 export interface ConnectionManager {
-  connections: Map<string, WebSocketConnection>;
+  connections: Record<string, WebSocketConnection>;
   
   addConnection(connection: WebSocketConnection): void;
   removeConnection(connectionId: string): void;

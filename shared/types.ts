@@ -254,7 +254,7 @@ export interface TriggerConfig {
 export interface ExecutionResult {
   success: boolean;
   results?: Record<string, any>;
-  handle_chain?: Map<string, BrowserHandle>;
+  handle_chain?: Record<string, BrowserHandle>;
   error?: string;
   execution_time?: number;
 }
