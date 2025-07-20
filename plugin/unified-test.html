@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>统一操作界面测试页面</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            background: #f5f5f5;
+        }
+        
+        .test-container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .test-container h2 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #0056b3;
+            transform: translateY(-1px);
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #1e7e34;
+            transform: translateY(-1px);
+        }
+        
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+        
+        .btn-warning:hover {
+            background: #e0a800;
+            transform: translateY(-1px);
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+            transform: translateY(-1px);
+        }
+        
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+        
+        .btn-info:hover {
+            background: #138496;
+            transform: translateY(-1px);
+        }
+        
+        .form-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        input[type="text"], 
+        input[type="email"], 
+        input[type="password"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.2s ease;
+        }
+        
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        }
+        
+        .interactive-elements {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .element-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+        }
+        
+        .element-card h4 {
+            margin-top: 0;
+            color: #495057;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .radio-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .link-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .link-list a {
+            color: #007bff;
+            text-decoration: none;
+            padding: 4px 0;
+        }
+        
+        .link-list a:hover {
+            text-decoration: underline;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-online {
+            background: #28a745;
+        }
+        
+        .status-offline {
+            background: #dc3545;
+        }
+        
+        .status-pending {
+            background: #ffc107;
+        }
+        
+        .result-display {
+            background: #e9ecef;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .instructions {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .instructions h3 {
+            margin-top: 0;
+            color: #0c5460;
+        }
+        
+        .step-list {
+            counter-reset: step-counter;
+            list-style: none;
+            padding: 0;
+        }
+        
+        .step-list li {
+            counter-increment: step-counter;
+            margin: 10px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+        
+        .step-list li::before {
+            content: counter(step-counter);
+            position: absolute;
+            left: 0;
+            top: 0;
+            background: #007bff;
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .highlight-demo {
+            border: 2px dashed #007bff;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 6px;
+            background: rgba(0, 123, 255, 0.05);
+        }
+        
+        .sequence-demo {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+        
+        .sequence-step {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 8px 12px;
+            font-size: 12px;
+            color: #495057;
+        }
+        
+        .sequence-step.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <h1>统一操作界面测试页面</h1>
+    
+    <div class="instructions">
+        <h3>🎯 测试说明</h3>
+        <ol class="step-list">
+            <li>页面加载后，右上角会出现"自动化助手"面板</li>
+            <li>点击"开始捕获"按钮进入捕获模式</li>
+            <li>鼠标悬停在页面元素上会看到蓝色高亮</li>
+            <li>点击元素将其添加到捕获列表</li>
+            <li>在捕获列表中点击元素，右侧会显示操作配置面板</li>
+            <li>选择操作类型，可以选择"立即模拟"或"添加到执行列表"</li>
+            <li>在执行列表中可以管理操作顺序和执行</li>
+            <li>点击"导出"按钮可以导出规则表</li>
+        </ol>
+    </div>
+
+    <div class="test-container">
+        <h2>🖱️ 点击操作测试区域</h2>
+        <p>测试不同类型的按钮点击操作</p>
+        
+        <div class="button-grid">
+            <button class="btn-primary" onclick="handleButtonClick('primary', this)">主要按钮</button>
+            <button class="btn-success" onclick="handleButtonClick('success', this)">成功按钮</button>
+            <button class="btn-warning" onclick="handleButtonClick('warning', this)">警告按钮</button>
+            <button class="btn-danger" onclick="handleButtonClick('danger', this)">危险按钮</button>
+            <button class="btn-info" onclick="handleButtonClick('info', this)">信息按钮</button>
+            <button class="btn-primary" onclick="showAlert('Hello World!')">弹窗按钮</button>
+        </div>
+        
+        <div class="result-display" id="clickResults">
+            点击结果将显示在这里...
+        </div>
+    </div>
+
+    <div class="test-container">
+        <h2>📝 表单输入测试区域</h2>
+        <p>测试各种表单元素的输入和交互</p>
+        
+        <div class="form-section">
+            <form onsubmit="handleFormSubmit(event)">
+                <div class="form-group">
+                    <label for="username">用户名:</label>
+                    <input type="text" id="username" name="username" placeholder="请输入用户名">
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">邮箱地址:</label>
+                    <input type="email" id="email" name="email" placeholder="user@example.com">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">密码:</label>
+                    <input type="password" id="password" name="password" placeholder="请输入密码">
+                </div>
+                
+                <div class="form-group">
+                    <label for="country">国家/地区:</label>
+                    <select id="country" name="country">
+                        <option value="">请选择...</option>
+                        <option value="cn">中国</option>
+                        <option value="us">美国</option>
+                        <option value="jp">日本</option>
+                        <option value="kr">韩国</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="message">留言:</label>
+                    <textarea id="message" name="message" rows="3" placeholder="请输入您的留言..."></textarea>
+                </div>
+                
+                <div class="button-grid">
+                    <button type="submit" class="btn-primary">提交表单</button>
+                    <button type="reset" class="btn-warning">重置表单</button>
+                </div>
+            </form>
+        </div>
+        
+        <div class="result-display" id="formResults">
+            表单操作结果将显示在这里...
+        </div>
+    </div>
+
+    <div class="test-container">
+        <h2>🎛️ 交互元素测试区域</h2>
+        <p>测试各种交互元素的选择和操作</p>
+        
+        <div class="interactive-elements">
+            <div class="element-card">
+                <h4>复选框组</h4>
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="feature1" onchange="handleCheckboxChange(this)">
+                        <label for="feature1">功能特性 1</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="feature2" onchange="handleCheckboxChange(this)">
+                        <label for="feature2">功能特性 2</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="feature3" onchange="handleCheckboxChange(this)">
+                        <label for="feature3">功能特性 3</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="element-card">
+                <h4>单选按钮组</h4>
+                <div class="radio-group">
+                    <div class="radio-item">
+                        <input type="radio" id="plan1" name="plan" value="basic" onchange="handleRadioChange(this)">
+                        <label for="plan1">基础版</label>
+                    </div>
+                    <div class="radio-item">
+                        <input type="radio" id="plan2" name="plan" value="pro" onchange="handleRadioChange(this)">
+                        <label for="plan2">专业版</label>
+                    </div>
+                    <div class="radio-item">
+                        <input type="radio" id="plan3" name="plan" value="enterprise" onchange="handleRadioChange(this)">
+                        <label for="plan3">企业版</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="element-card">
+                <h4>链接列表</h4>
+                <div class="link-list">
+                    <a href="#" onclick="handleLinkClick(event, '首页')">首页</a>
+                    <a href="#" onclick="handleLinkClick(event, '产品')">产品介绍</a>
+                    <a href="#" onclick="handleLinkClick(event, '服务')">服务支持</a>
+                    <a href="#" onclick="handleLinkClick(event, '联系')">联系我们</a>
+                    <a href="https://example.com" target="_blank">外部链接</a>
+                </div>
+            </div>
+            
+            <div class="element-card">
+                <h4>状态指示器</h4>
+                <div style="margin: 10px 0;">
+                    <span class="status-indicator status-online"></span>
+                    <span>在线状态</span>
+                </div>
+                <div style="margin: 10px 0;">
+                    <span class="status-indicator status-offline"></span>
+                    <span>离线状态</span>
+                </div>
+                <div style="margin: 10px 0;">
+                    <span class="status-indicator status-pending"></span>
+                    <span>等待状态</span>
+                </div>
+                <button class="btn-info" onclick="toggleStatus()">切换状态</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-container">
+        <h2>🔄 连续操作演示区域</h2>
+        <p>用于测试操作序列的创建和执行</p>
+        
+        <div class="highlight-demo">
+            <h4>操作序列演示</h4>
+            <p>按顺序点击下面的按钮，然后添加到执行列表中测试连续执行功能：</p>
+            
+            <div class="sequence-demo">
+                <button class="sequence-step" onclick="executeSequenceStep(1, this)">步骤 1</button>
+                <button class="sequence-step" onclick="executeSequenceStep(2, this)">步骤 2</button>
+                <button class="sequence-step" onclick="executeSequenceStep(3, this)">步骤 3</button>
+                <button class="sequence-step" onclick="executeSequenceStep(4, this)">步骤 4</button>
+                <button class="sequence-step" onclick="executeSequenceStep(5, this)">步骤 5</button>
+            </div>
+            
+            <div class="form-group">
+                <label for="sequenceInput">测试输入框:</label>
+                <input type="text" id="sequenceInput" placeholder="用于测试文本输入操作">
+            </div>
+            
+            <div class="button-grid">
+                <button class="btn-success" onclick="resetSequence()">重置序列</button>
+                <button class="btn-primary" onclick="showSequenceStatus()">显示状态</button>
+            </div>
+        </div>
+        
+        <div class="result-display" id="sequenceResults">
+            序列执行结果将显示在这里...
+        </div>
+    </div>
+
+    <script>
+        let clickCount = 0;
+        let sequenceStep = 0;
+        let sequenceResults = [];
+        
+        function handleButtonClick(type, button) {
+            clickCount++;
+            const timestamp = new Date().toLocaleTimeString();
+            const message = `[${timestamp}] ${type}按钮被点击 (第${clickCount}次)`;
+            
+            appendToResults('clickResults', message);
+            
+            // 视觉反馈
+            button.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                button.style.transform = 'scale(1)';
+            }, 100);
+        }
+        
+        function showAlert(message) {
+            alert(message);
+            appendToResults('clickResults', `[${new Date().toLocaleTimeString()}] 显示弹窗: ${message}`);
+        }
+        
+        function handleFormSubmit(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const timestamp = new Date().toLocaleTimeString();
+            
+            let formContent = `[${timestamp}] 表单提交:\n`;
+            for (let [key, value] of formData.entries()) {
+                formContent += `  ${key}: ${value}\n`;
+            }
+            
+            appendToResults('formResults', formContent);
+        }
+        
+        function handleCheckboxChange(checkbox) {
+            const timestamp = new Date().toLocaleTimeString();
+            const message = `[${timestamp}] 复选框 ${checkbox.id}: ${checkbox.checked ? '选中' : '取消选中'}`;
+            appendToResults('formResults', message);
+        }
+        
+        function handleRadioChange(radio) {
+            const timestamp = new Date().toLocaleTimeString();
+            const message = `[${timestamp}] 单选按钮选择: ${radio.value}`;
+            appendToResults('formResults', message);
+        }
+        
+        function handleLinkClick(event, linkName) {
+            event.preventDefault();
+            const timestamp = new Date().toLocaleTimeString();
+            const message = `[${timestamp}] 点击链接: ${linkName}`;
+            appendToResults('formResults', message);
+        }
+        
+        function toggleStatus() {
+            const indicators = document.querySelectorAll('.status-indicator');
+            indicators.forEach(indicator => {
+                if (indicator.classList.contains('status-online')) {
+                    indicator.classList.remove('status-online');
+                    indicator.classList.add('status-offline');
+                } else if (indicator.classList.contains('status-offline')) {
+                    indicator.classList.remove('status-offline');
+                    indicator.classList.add('status-pending');
+                } else {
+                    indicator.classList.remove('status-pending');
+                    indicator.classList.add('status-online');
+                }
+            });
+            
+            appendToResults('formResults', `[${new Date().toLocaleTimeString()}] 状态已切换`);
+        }
+        
+        function executeSequenceStep(step, button) {
+            sequenceStep = step;
+            const timestamp = new Date().toLocaleTimeString();
+            const message = `[${timestamp}] 执行序列步骤 ${step}`;
+            
+            sequenceResults.push({ step, timestamp, message });
+            appendToResults('sequenceResults', message);
+            
+            // 更新按钮状态
+            document.querySelectorAll('.sequence-step').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            button.classList.add('active');
+            
+            // 视觉反馈
+            button.style.background = '#28a745';
+            setTimeout(() => {
+                button.style.background = '';
+            }, 1000);
+        }
+        
+        function resetSequence() {
+            sequenceStep = 0;
+            sequenceResults = [];
+            
+            document.querySelectorAll('.sequence-step').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            document.getElementById('sequenceResults').innerHTML = '序列执行结果将显示在这里...';
+            appendToResults('sequenceResults', `[${new Date().toLocaleTimeString()}] 序列已重置`);
+        }
+        
+        function showSequenceStatus() {
+            const status = `当前序列状态: 步骤 ${sequenceStep}, 总共执行了 ${sequenceResults.length} 个操作`;
+            appendToResults('sequenceResults', `[${new Date().toLocaleTimeString()}] ${status}`);
+        }
+        
+        function appendToResults(elementId, message) {
+            const element = document.getElementById(elementId);
+            if (element.textContent.includes('将显示在这里')) {
+                element.textContent = '';
+            }
+            
+            element.textContent += message + '\n';
+            element.scrollTop = element.scrollHeight;
+        }
+        
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('统一操作界面测试页面已加载');
+            
+            // 初始化结果显示区域
+            appendToResults('clickResults', '准备进行点击测试...');
+            appendToResults('formResults', '准备进行表单测试...');
+            appendToResults('sequenceResults', '准备进行序列测试...');
+        });
+    </script>
+</body>
+</html>

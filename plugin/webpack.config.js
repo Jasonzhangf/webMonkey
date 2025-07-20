@@ -10,8 +10,7 @@ export default {
   devtool: 'cheap-module-source-map',
   entry: {
     background: './src/background.ts',
-    content: './src/content/content.ts',
-    'simple-content': './src/content/simple-content.ts',
+    'unified-content': './src/content/unified-content.ts',
     'simple-popup': './src/popup/simple-popup.js'
   },
   output: {
