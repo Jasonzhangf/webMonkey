@@ -642,8 +642,10 @@ class SimpleContentScript {
       const operationNames = {
         'hover': '🖱️ 悬停',
         'click': '👆 点击',
+        'js-click': '⚡ JS点击',
         'rightclick': '🖱️ 右键',
         'input': '⌨️ 输入',
+        'enter': '⏎ Enter键',
         'scroll-up': '⬆️ 上滚',
         'scroll-down': '⬇️ 下滚',
         'extract-text': '📝 提取'
