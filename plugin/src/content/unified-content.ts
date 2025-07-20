@@ -196,6 +196,11 @@ class UnifiedContentScript {
         border-color: #2196f3 !important;
       }
       
+      .wao-item-content {
+        flex: 1 !important;
+        cursor: pointer !important;
+      }
+      
       .wao-item-title {
         font-weight: 500 !important;
         color: #333 !important;
@@ -205,6 +210,66 @@ class UnifiedContentScript {
       .wao-item-desc {
         font-size: 12px !important;
         color: #666 !important;
+      }
+      
+      .wao-item-controls {
+        display: flex !important;
+        gap: 4px !important;
+        align-items: center !important;
+      }
+      
+      .wao-item-control {
+        padding: 2px 6px !important;
+        border: none !important;
+        border-radius: 3px !important;
+        cursor: pointer !important;
+        font-size: 11px !important;
+        font-weight: 500 !important;
+        transition: all 0.2s ease !important;
+        min-width: 20px !important;
+        height: 20px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+      }
+      
+      .wao-move-up {
+        background: #17a2b8 !important;
+        color: white !important;
+      }
+      
+      .wao-move-up:hover:not(:disabled) {
+        background: #138496 !important;
+      }
+      
+      .wao-move-down {
+        background: #17a2b8 !important;
+        color: white !important;
+      }
+      
+      .wao-move-down:hover:not(:disabled) {
+        background: #138496 !important;
+      }
+      
+      .wao-delete {
+        background: #dc3545 !important;
+        color: white !important;
+      }
+      
+      .wao-delete:hover {
+        background: #c82333 !important;
+      }
+      
+      .wao-item-control:disabled {
+        background: #e9ecef !important;
+        color: #6c757d !important;
+        cursor: not-allowed !important;
+      }
+      
+      .wao-list-item {
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
       }
       
       /* 操作面板样式 */
@@ -606,20 +671,71 @@ class UnifiedContentScript {
       return;
     }
     
-    this.captureList.innerHTML = this.capturedElements.map(element => `
+    this.captureList.innerHTML = this.capturedElements.map((element, index) => `
       <div class="wao-list-item" data-id="${element.id}">
-        <div class="wao-item-title">${element.description}</div>
-        <div class="wao-item-desc">${new Date(element.timestamp).toLocaleTimeString()}</div>
+        <div class="wao-item-content">
+          <div class="wao-item-title">${element.description}</div>
+          <div class="wao-item-desc">${new Date(element.timestamp).toLocaleTimeString()}</div>
+        </div>
+        <div class="wao-item-controls">
+          <button class="wao-item-control wao-move-up" data-action="up" data-id="${element.id}" ${index === 0 ? 'disabled' : ''}>↑</button>
+          <button class="wao-item-control wao-move-down" data-action="down" data-id="${element.id}" ${index === this.capturedElements.length - 1 ? 'disabled' : ''}>↓</button>
+          <button class="wao-item-control wao-delete" data-action="delete" data-id="${element.id}">删除</button>
+        </div>
       </div>
     `).join('');
     
     // 添加点击事件监听器
     this.captureList.querySelectorAll('.wao-list-item').forEach(item => {
-      item.addEventListener('click', (e) => {
-        const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+      // 点击元素内容区域选择元素
+      const contentArea = item.querySelector('.wao-item-content');
+      contentArea?.addEventListener('click', (e) => {
+        const id = (e.currentTarget as HTMLElement).closest('.wao-list-item')?.getAttribute('data-id');
         if (id) this.selectCapturedElement(id);
       });
     });
+    
+    // 添加控制按钮事件监听器
+    this.captureList.querySelectorAll('.wao-item-control').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation(); // 防止触发元素选择
+        const action = (e.target as HTMLElement).getAttribute('data-action');
+        const id = (e.target as HTMLElement).getAttribute('data-id');
+        if (action && id) this.handleCaptureListAction(action, id);
+      });
+    });
+  }
+
+  private handleCaptureListAction(action: string, id: string): void {
+    const index = this.capturedElements.findIndex(el => el.id === id);
+    if (index === -1) return;
+    
+    switch (action) {
+      case 'up':
+        if (index > 0) {
+          // 交换位置
+          [this.capturedElements[index], this.capturedElements[index - 1]] = 
+          [this.capturedElements[index - 1], this.capturedElements[index]];
+          this.updateCaptureList();
+          this.showNotification('已上移元素', 'info');
+        }
+        break;
+      case 'down':
+        if (index < this.capturedElements.length - 1) {
+          // 交换位置
+          [this.capturedElements[index], this.capturedElements[index + 1]] = 
+          [this.capturedElements[index + 1], this.capturedElements[index]];
+          this.updateCaptureList();
+          this.showNotification('已下移元素', 'info');
+        }
+        break;
+      case 'delete':
+        // 删除元素
+        this.capturedElements.splice(index, 1);
+        this.updateCaptureList();
+        this.showNotification('已删除捕获的元素', 'info');
+        break;
+    }
   }
 
   private selectCapturedElement(id: string): void {
