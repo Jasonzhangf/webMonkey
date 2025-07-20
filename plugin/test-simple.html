@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>简单测试页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        
+        .test-button {
+            padding: 10px 15px;
+            margin: 5px;
+            background: #007cba;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        
+        .test-input {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+        
+        .test-card {
+            background: #f9f9f9;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>插件功能测试页面</h1>
+    
+    <div class="test-section">
+        <h2>按钮测试</h2>
+        <button class="test-button" id="btn1">按钮 1</button>
+        <button class="test-button" id="btn2">按钮 2</button>
+        <button class="test-button" id="btn3">按钮 3</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>输入框测试</h2>
+        <input type="text" class="test-input" placeholder="文本输入框" id="input1">
+        <input type="email" class="test-input" placeholder="邮箱输入框" id="input2">
+        <textarea class="test-input" placeholder="文本区域" id="textarea1"></textarea>
+    </div>
+    
+    <div class="test-section">
+        <h2>卡片测试</h2>
+        <div class="test-card" id="card1">
+            <h3>卡片标题 1</h3>
+            <p>这是第一个测试卡片</p>
+        </div>
+        <div class="test-card" id="card2">
+            <h3>卡片标题 2</h3>
+            <p>这是第二个测试卡片</p>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>链接测试</h2>
+        <a href="#" id="link1">测试链接 1</a> |
+        <a href="#" id="link2">测试链接 2</a> |
+        <a href="#" id="link3">测试链接 3</a>
+    </div>
+    
+    <script>
+        // 简单的交互功能
+        document.querySelectorAll('.test-button').forEach(btn => {
+            btn.addEventListener('click', function() {
+                console.log('按钮被点击:', this.textContent);
+                alert('按钮 "' + this.textContent + '" 被点击了！');
+            });
+        });
+        
+        document.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log('链接被点击:', this.textContent);
+                alert('链接 "' + this.textContent + '" 被点击了！');
+            });
+        });
+    </script>
+</body>
+</html>

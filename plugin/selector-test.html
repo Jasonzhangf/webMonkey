@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>选择器生成测试页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            line-height: 1.6;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 8px;
+        }
+        
+        .element-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .test-element {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: white;
+            text-align: center;
+        }
+        
+        /* 按钮样式 */
+        .btn-primary { background: #007cba; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
+        .btn-secondary { background: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
+        .btn-success { background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
+        .btn-danger { background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
+        
+        /* 输入框样式 */
+        .form-control { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .form-control-lg { padding: 10px; font-size: 16px; }
+        .form-control-sm { padding: 4px; font-size: 12px; }
+        
+        /* 链接样式 */
+        .link-primary { color: #007cba; text-decoration: none; }
+        .link-secondary { color: #6c757d; text-decoration: none; }
+        .link-success { color: #28a745; text-decoration: none; }
+        
+        /* 卡片样式 */
+        .card { border: 1px solid #dee2e6; border-radius: 6px; overflow: hidden; }
+        .card-header { background: #f8f9fa; padding: 10px; font-weight: bold; }
+        .card-body { padding: 15px; }
+        
+        /* 列表样式 */
+        .list-group { list-style: none; padding: 0; margin: 0; }
+        .list-group-item { padding: 8px 12px; border: 1px solid #dee2e6; margin-bottom: -1px; }
+        .list-group-item:first-child { border-top-left-radius: 4px; border-top-right-radius: 4px; }
+        .list-group-item:last-child { border-bottom-left-radius: 4px; border-bottom-right-radius: 4px; }
+        
+        .expected-selector {
+            font-family: monospace;
+            background: #f1f3f4;
+            padding: 2px 4px;
+            border-radius: 2px;
+            font-size: 11px;
+            color: #d73a49;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎯 选择器生成测试页面</h1>
+    <p><strong>使用说明：</strong>点击插件图标 → "开始选择元素" → 点击下面的元素测试选择器生成功能</p>
+    
+    <div class="test-section">
+        <h3>1. ID选择器测试</h3>
+        <p>这些元素有唯一ID，应该生成ID选择器</p>
+        <div class="element-grid">
+            <div class="test-element">
+                <button id="submit-button" class="btn-primary">提交按钮</button>
+                <div class="expected-selector">预期: #submit-button</div>
+            </div>
+            <div class="test-element">
+                <input id="username-input" type="text" placeholder="用户名" class="form-control">
+                <div class="expected-selector">预期: #username-input</div>
+            </div>
+            <div class="test-element">
+                <a id="help-link" href="#" class="link-primary">帮助链接</a>
+                <div class="expected-selector">预期: #help-link</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h3>2. CSS类选择器测试</h3>
+        <p>这些元素没有ID但有CSS类，应该生成类选择器</p>
+        <div class="element-grid">
+            <div class="test-element">
+                <button class="btn-secondary custom-btn">自定义按钮</button>
+                <div class="expected-selector">预期: button.btn-secondary</div>
+            </div>
+            <div class="test-element">
+                <input class="form-control search-input" type="search" placeholder="搜索">
+                <div class="expected-selector">预期: input.form-control</div>
+            </div>
+            <div class="test-element">
+                <span class="badge badge-info">信息标签</span>
+                <div class="expected-selector">预期: span.badge</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h3>3. 属性选择器测试</h3>
+        <p>这些元素有特殊属性，应该生成属性选择器</p>
+        <div class="element-grid">
+            <div class="test-element">
+                <input name="email" type="email" placeholder="邮箱地址">
+                <div class="expected-selector">预期: input[name="email"]</div>
+            </div>
+            <div class="test-element">
+                <button type="submit" title="提交表单">提交</button>
+                <div class="expected-selector">预期: button[type="submit"]</div>
+            </div>
+            <div class="test-element">
+                <input type="checkbox" value="agree" name="terms">
+                <label>同意条款</label>
+                <div class="expected-selector">预期: input[name="terms"]</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h3>4. nth-child选择器测试</h3>
+        <p>这些元素没有ID和类，应该生成nth-child选择器</p>
+        <div class="element-grid">
+            <div class="test-element">
+                <p>第一个段落</p>
+                <div class="expected-selector">预期: p:nth-child(n)</div>
+            </div>
+            <div class="test-element">
+                <span>普通文本</span>
+                <div class="expected-selector">预期: span:nth-child(n)</div>
+            </div>
+            <div class="test-element">
+                <div>普通容器</div>
+                <div class="expected-selector">预期: div:nth-child(n)</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h3>5. 复杂结构测试</h3>
+        <p>测试嵌套结构和复杂元素</p>
+        
+        <div class="card">
+            <div class="card-header">卡片标题</div>
+            <div class="card-body">
+                <h5 id="card-title">卡片内容标题</h5>
+                <p class="card-text">这是卡片的内容文本。</p>
+                <button class="btn-success">操作按钮</button>
+            </div>
+        </div>
+        
+        <ul class="list-group" style="margin-top: 15px;">
+            <li class="list-group-item">列表项目 1</li>
+            <li class="list-group-item active">列表项目 2（激活）</li>
+            <li class="list-group-item">列表项目 3</li>
+        </ul>
+    </div>
+    
+    <div class="test-section">
+        <h3>6. 表单元素测试</h3>
+        <p>测试各种表单控件</p>
+        
+        <form id="test-form">
+            <div style="margin-bottom: 10px;">
+                <label for="name-field">姓名:</label>
+                <input id="name-field" name="fullname" type="text" class="form-control">
+            </div>
+            
+            <div style="margin-bottom: 10px;">
+                <label for="age-field">年龄:</label>
+                <input id="age-field" name="age" type="number" min="1" max="120">
+            </div>
+            
+            <div style="margin-bottom: 10px;">
+                <label for="country-select">国家:</label>
+                <select id="country-select" name="country">
+                    <option value="">请选择</option>
+                    <option value="cn">中国</option>
+                    <option value="us">美国</option>
+                    <option value="jp">日本</option>
+                </select>
+            </div>
+            
+            <div style="margin-bottom: 10px;">
+                <label for="message-area">留言:</label>
+                <textarea id="message-area" name="message" rows="3" placeholder="请输入留言"></textarea>
+            </div>
+            
+            <div>
+                <input type="radio" id="male" name="gender" value="male">
+                <label for="male">男</label>
+                
+                <input type="radio" id="female" name="gender" value="female">
+                <label for="female">女</label>
+            </div>
+        </form>
+    </div>
+    
+    <script>
+        // 添加一些交互功能用于测试
+        document.addEventListener('click', function(e) {
+            if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A') {
+                console.log('元素被点击:', {
+                    tag: e.target.tagName,
+                    id: e.target.id || '无',
+                    class: e.target.className || '无',
+                    text: e.target.textContent
+                });
+            }
+        });
+        
+        // 页面加载完成提示
+        window.addEventListener('load', function() {
+            console.log('选择器测试页面已加载');
+            console.log('请使用插件开始测试元素选择功能');
+        });
+    </script>
+</body>
+</html>

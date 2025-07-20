@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>元素操作测试页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 8px;
+        }
+        
+        .element-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .test-element {
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            background: white;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .test-element:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        
+        /* 按钮样式 */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            margin: 5px;
+        }
+        
+        .btn-primary { background: #007cba; color: white; }
+        .btn-primary:hover { background: #005a8b; }
+        
+        .btn-success { background: #28a745; color: white; }
+        .btn-success:hover { background: #1e7e34; }
+        
+        .btn-warning { background: #ffc107; color: #212529; }
+        .btn-warning:hover { background: #e0a800; }
+        
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-danger:hover { background: #c82333; }
+        
+        /* 输入框样式 */
+        .form-control {
+            width: 100%;
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #007cba;
+            box-shadow: 0 0 0 3px rgba(0, 123, 186, 0.1);
+        }
+        
+        /* 可滚动区域 */
+        .scrollable-area {
+            height: 200px;
+            overflow-y: auto;
+            border: 2px solid #ddd;
+            padding: 15px;
+            background: white;
+            border-radius: 4px;
+        }
+        
+        .scrollable-content {
+            height: 500px;
+            background: linear-gradient(to bottom, #f0f8ff, #e6f3ff, #cce7ff);
+            padding: 20px;
+            border-radius: 4px;
+        }
+        
+        /* 文本内容区域 */
+        .text-content {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            border-left: 4px solid #007cba;
+            margin: 10px 0;
+        }
+        
+        /* 右键菜单测试 */
+        .context-menu-area {
+            background: #fff3cd;
+            padding: 20px;
+            border: 2px dashed #ffc107;
+            border-radius: 4px;
+            cursor: context-menu;
+        }
+        
+        /* 悬停效果测试 */
+        .hover-test {
+            background: #d1ecf1;
+            padding: 20px;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+        
+        .hover-test:hover {
+            background: #bee5eb;
+            transform: scale(1.05);
+        }
+        
+        /* 操作结果显示 */
+        .operation-log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .log-entry {
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+        
+        .instructions {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .instructions h4 {
+            margin-top: 0;
+            color: #155724;
+        }
+        
+        .operation-demo {
+            background: #fff;
+            border: 2px solid #007cba;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎮 元素操作功能测试页面</h1>
+    
+    <div class="instructions">
+        <h4>📋 测试说明</h4>
+        <ol>
+            <li>点击插件图标 → "开始选择元素"</li>
+            <li>点击下面的各种元素进行捕获</li>
+            <li>在插件菜单中选择不同的操作进行测试</li>
+            <li>观察页面元素的反应和操作结果</li>
+        </ol>
+    </div>
+    
+    <div class="test-section">
+        <h3>1. 🖱️ 悬停操作测试</h3>
+        <p>测试模拟鼠标悬停功能</p>
+        <div class="element-grid">
+            <div class="test-element">
+                <div class="hover-test" id="hover-target-1">
+                    <h4>悬停测试区域 1</h4>
+                    <p>鼠标悬停时会有视觉变化</p>
+                </div>
+            </div>
+            <div class="test-element">
+                <div class="hover-test" id="hover-target-2">
+                    <h4>悬停测试区域 2</h4>
+                    <p>支持悬停效果的元素</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h3>2. 👆 点击操作测试</h3>
+        <p>测试模拟鼠标点击功能</p>
+        <div class="element-grid">
+            <div class="test-element">
+                <button class="btn btn-primary" id="click-btn-1">主要按钮</button>
+                <p>点击后会触发事件</p>
+            </div>
+            <div class="test-element">
+                <button class="btn btn-success" id="click-btn-2">成功按钮</button>
+                <p>测试点击响应</p>
+            </div>
+            <div class="test-element">
+                <a href="#" id="click-link-1" class="btn btn-warning">测试链接</a>
+                <p>链接点击测试</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h3>3. 🖱️ 右键操作测试</h3>
+        <p>测试模拟右键点击功能</p>
+        <div class="element-grid">
+            <div class="test-element">
+                <div class="context-menu-area" id="rightclick-area-1">
+                    <h4>右键测试区域 1</h4>
+                    <p>右键点击此区域测试上下文菜单</p>
+                </div>
+            </div>
+            <div class="test-element">
+                <div class="context-menu-area" id="rightclick-area-2">
+                    <h4>右键测试区域 2</h4>
+                    <p>支持右键菜单的区域</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h3>4. ⌨️ 输入操作测试</h3>
+        <p>测试模拟文字输入功能</p>
+        <div class="element-grid">
+            <div class="test-element">
+                <label for="text-input-1">文本输入框:</label>
+                <input type="text" id="text-input-1" class="form-control" placeholder="请输入文字">
+            </div>
+            <div class="test-element">
+                <label for="email-input-1">邮箱输入框:</label>
+                <input type="email" id="email-input-1" class="form-control" placeholder="example@email.com">
+            </div>
+            <div class="test-element">
+                <label for="textarea-1">文本区域:</label>
+                <textarea id="textarea-1" class="form-control" rows="3" placeholder="请输入多行文字"></textarea>
+            </div>
+            <div class="test-element">
+                <label for="number-input-1">数字输入框:</label>
+                <input type="number" id="number-input-1" class="form-control" placeholder="请输入数字">
+            </div>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h3>5. ⬆️⬇️ 滚动操作测试</h3>
+        <p>测试向上/向下滚动功能</p>
+        <div class="element-grid">
+            <div class="test-element">
+                <h4>可滚动区域 1</h4>
+                <div class="scrollable-area" id="scroll-area-1">
+                    <div class="scrollable-content">
+                        <h5>滚动内容区域</h5>
+                        <p>这是一个可以滚动的区域。内容很长，需要滚动才能看到全部内容。</p>
+                        <p>第二段内容...</p>
+                        <p>第三段内容...</p>
+                        <p>第四段内容...</p>
+                        <p>第五段内容...</p>
+                        <p>第六段内容...</p>
+                        <p>第七段内容...</p>
+                        <p>第八段内容...</p>
+                        <p>第九段内容...</p>
+                        <p>第十段内容...</p>
+                        <p>这是最后一段内容。</p>
+                    </div>
+                </div>
+            </div>
+            <div class="test-element">
+                <h4>可滚动区域 2</h4>
+                <div class="scrollable-area" id="scroll-area-2">
+                    <div class="scrollable-content">
+                        <h5>另一个滚动区域</h5>
+                        <p>测试滚动功能的第二个区域。</p>
+                        <p>内容A...</p>
+                        <p>内容B...</p>
+                        <p>内容C...</p>
+                        <p>内容D...</p>
+                        <p>内容E...</p>
+                        <p>内容F...</p>
+                        <p>内容G...</p>
+                        <p>内容H...</p>
+                        <p>内容I...</p>
+                        <p>内容J...</p>
+                        <p>滚动测试结束。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h3>6. 📝 文字提取测试</h3>
+        <p>测试提取元素文字功能</p>
+        <div class="element-grid">
+            <div class="test-element">
+                <div class="text-content" id="text-extract-1">
+                    <h4>标题文字</h4>
+                    <p>这是一段可以被提取的文字内容。包含了标题和段落文字。</p>
+                </div>
+            </div>
+            <div class="test-element">
+                <div class="text-content" id="text-extract-2">
+                    <h4>另一个文本区域</h4>
+                    <p>这里有不同的文字内容，用于测试文字提取功能的准确性。</p>
+                    <small>还包含小字体文本。</small>
+                </div>
+            </div>
+            <div class="test-element">
+                <span id="text-extract-3">简单文本元素</span>
+            </div>
+            <div class="test-element">
+                <button id="text-extract-4" class="btn btn-primary">按钮文字</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h3>7. 🔄 综合操作测试</h3>
+        <p>测试多种操作的组合使用</p>
+        <div class="operation-demo">
+            <h4>综合测试区域</h4>
+            <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                <input type="text" id="combo-input" class="form-control" placeholder="组合测试输入框" style="flex: 1; min-width: 200px;">
+                <button id="combo-button" class="btn btn-success">提交</button>
+                <div id="combo-text" class="text-content" style="flex: 1; min-width: 200px;">
+                    <p>这是组合测试的文本内容，可以提取文字。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="operation-log" id="operation-log">
+        <h4>📊 操作日志</h4>
+        <div id="log-content">
+            <div class="log-entry">等待操作...</div>
+        </div>
+    </div>
+    
+    <script>
+        // 操作日志记录
+        function logOperation(operation, element, details = '') {
+            const logContent = document.getElementById('log-content');
+            const timestamp = new Date().toLocaleTimeString();
+            const elementDesc = element.id || element.tagName.toLowerCase();
+            
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.innerHTML = `[${timestamp}] ${operation} - ${elementDesc} ${details}`;
+            
+            logContent.appendChild(logEntry);
+            logContent.scrollTop = logContent.scrollHeight;
+        }
+        
+        // 添加事件监听器
+        document.addEventListener('DOMContentLoaded', function() {
+            // 点击事件监听
+            document.querySelectorAll('button, a').forEach(element => {
+                element.addEventListener('click', function(e) {
+                    if (this.href && this.href.includes('#')) {
+                        e.preventDefault();
+                    }
+                    logOperation('点击', this, `- ${this.textContent}`);
+                });
+            });
+            
+            // 悬停事件监听
+            document.querySelectorAll('.hover-test').forEach(element => {
+                element.addEventListener('mouseenter', function() {
+                    logOperation('悬停进入', this);
+                });
+                
+                element.addEventListener('mouseleave', function() {
+                    logOperation('悬停离开', this);
+                });
+            });
+            
+            // 右键事件监听
+            document.querySelectorAll('.context-menu-area').forEach(element => {
+                element.addEventListener('contextmenu', function(e) {
+                    e.preventDefault();
+                    logOperation('右键点击', this);
+                });
+            });
+            
+            // 输入事件监听
+            document.querySelectorAll('input, textarea').forEach(element => {
+                element.addEventListener('input', function() {
+                    logOperation('输入', this, `- 值: "${this.value}"`);
+                });
+            });
+            
+            // 滚动事件监听
+            document.querySelectorAll('.scrollable-area').forEach(element => {
+                element.addEventListener('scroll', function() {
+                    logOperation('滚动', this, `- 位置: ${this.scrollTop}px`);
+                });
+            });
+            
+            console.log('操作测试页面已加载完成');
+            console.log('请使用插件开始测试元素操作功能');
+        });
+    </script>
+</body>
+</html>

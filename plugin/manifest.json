@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Web Automation Orchestrator",
+  "name": "元素捕获器",
   "version": "1.0.0",
-  "description": "Browser extension for web automation element selection and operation definition",
+  "description": "网页元素选择和操作工具",
   
   "permissions": [
     "activeTab",
@@ -25,15 +25,15 @@
   "content_scripts": [
     {
       "matches": ["http://*/*", "https://*/*"],
-      "js": ["content.js"],
+      "js": ["simple-content.js"],
       "css": ["content.css"],
       "run_at": "document_end"
     }
   ],
   
   "action": {
-    "default_popup": "popup.html",
-    "default_title": "Web Automation Orchestrator",
+    "default_popup": "simple-popup.html",
+    "default_title": "元素捕获器",
     "default_icon": {
       "16": "icons/icon16.png",
       "32": "icons/icon32.png",
@@ -51,7 +51,7 @@
   
   "web_accessible_resources": [
     {
-      "resources": ["injected.js"],
+      "resources": ["test-page.html"],
       "matches": ["http://*/*", "https://*/*"]
     }
   ]

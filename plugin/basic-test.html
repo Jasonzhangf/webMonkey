@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基础功能测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .test-item {
+            margin: 15px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        
+        button {
+            padding: 8px 15px;
+            margin: 5px;
+            background: #007cba;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        
+        input {
+            padding: 5px;
+            margin: 5px;
+            border: 1px solid #ccc;
+        }
+        
+        .highlight-test {
+            background: yellow;
+            padding: 10px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>插件基础功能测试</h1>
+    
+    <div class="test-item">
+        <h3>测试说明</h3>
+        <p>1. 点击浏览器工具栏中的插件图标</p>
+        <p>2. 点击"开始选择元素"</p>
+        <p>3. 在下面的元素上点击进行测试</p>
+    </div>
+    
+    <div class="test-item">
+        <h3>按钮测试</h3>
+        <button id="test-btn-1">测试按钮 1</button>
+        <button id="test-btn-2">测试按钮 2</button>
+    </div>
+    
+    <div class="test-item">
+        <h3>输入框测试</h3>
+        <input type="text" id="test-input-1" placeholder="测试输入框 1">
+        <input type="text" id="test-input-2" placeholder="测试输入框 2">
+    </div>
+    
+    <div class="test-item">
+        <h3>文本测试</h3>
+        <p id="test-p-1">这是一个测试段落，点击我试试</p>
+        <span id="test-span-1">这是一个测试文本</span>
+    </div>
+    
+    <div class="test-item highlight-test">
+        <h3>高亮区域测试</h3>
+        <p>这个区域有背景色，测试高亮效果</p>
+    </div>
+    
+    <div class="test-item">
+        <h3>链接测试</h3>
+        <a href="#" id="test-link-1">测试链接 1</a> | 
+        <a href="#" id="test-link-2">测试链接 2</a>
+    </div>
+    
+    <script>
+        // 简单的点击事件，用于验证元素是否可交互
+        document.addEventListener('click', function(e) {
+            if (e.target.id && e.target.id.startsWith('test-')) {
+                console.log('元素被点击:', e.target.id, e.target.textContent || e.target.placeholder);
+            }
+        });
+        
+        // 页面加载完成后的提示
+        window.addEventListener('load', function() {
+            console.log('测试页面已加载完成');
+            console.log('请点击插件图标开始测试');
+        });
+    </script>
+</body>
+</html>

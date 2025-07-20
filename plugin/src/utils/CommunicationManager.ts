@@ -3,7 +3,7 @@
  * 插件通信管理器
  */
 
-import { BaseMessage, ResponseMessage } from '../../../shared/communication';
+import { BaseMessage } from '../../../shared/communication';
 import { COMMUNICATION } from '../../../shared/constants';
 
 export class CommunicationManager {

@@ -188,7 +188,6 @@ export class HighlightManager {
   private adjustTooltipPosition(tooltip: HTMLElement): void {
     const rect = tooltip.getBoundingClientRect();
     const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
     
     // Adjust horizontal position
     if (rect.right > viewportWidth) {

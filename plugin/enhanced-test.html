@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>增强功能测试页面</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        
+        .test-section h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+        
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+        
+        .primary-btn {
+            background: #007bff;
+            color: white;
+        }
+        
+        .primary-btn:hover {
+            background: #0056b3;
+        }
+        
+        .success-btn {
+            background: #28a745;
+            color: white;
+        }
+        
+        .success-btn:hover {
+            background: #1e7e34;
+        }
+        
+        .warning-btn {
+            background: #ffc107;
+            color: #212529;
+        }
+        
+        .warning-btn:hover {
+            background: #e0a800;
+        }
+        
+        .danger-btn {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .danger-btn:hover {
+            background: #c82333;
+        }
+        
+        input[type="text"], input[type="email"], textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            margin: 5px 0;
+        }
+        
+        .form-group {
+            margin: 15px 0;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        .result-area {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+            min-height: 100px;
+        }
+        
+        .interactive-elements {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .element-card {
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: white;
+        }
+        
+        .element-card h4 {
+            margin-top: 0;
+            color: #555;
+        }
+        
+        .click-counter {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-active {
+            background: #28a745;
+        }
+        
+        .status-inactive {
+            background: #dc3545;
+        }
+        
+        .instructions {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        
+        .instructions h3 {
+            margin-top: 0;
+            color: #0c5460;
+        }
+        
+        .instructions ol {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>网页自动化助手 - 增强功能测试</h1>
+    
+    <div class="instructions">
+        <h3>测试说明</h3>
+        <ol>
+            <li>确保浏览器插件已安装并激活</li>
+            <li>点击右上角的"开始捕获"按钮进入捕获模式</li>
+            <li>将鼠标悬停在下方的元素上，然后点击"选择此元素"</li>
+            <li>在弹出的操作菜单中选择不同的操作类型进行测试</li>
+            <li>使用"绑定到操作列表"功能创建操作序列</li>
+            <li>在操作列表中配置等待时间并执行连续操作</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>1. 点击测试区域</h2>
+        <p>测试两种不同的点击模拟方法：鼠标模拟点击和JavaScript点击</p>
+        
+        <div class="button-group">
+            <button class="primary-btn" onclick="handleClick('primary', this)">主要按钮</button>
+            <button class="success-btn" onclick="handleClick('success', this)">成功按钮</button>
+            <button class="warning-btn" onclick="handleClick('warning', this)">警告按钮</button>
+            <button class="danger-btn" onclick="handleClick('danger', this)">危险按钮</button>
+        </div>
+        
+        <div class="click-counter" id="clickCounter">
+            点击次数: <span id="clickCount">0</span>
+        </div>
+        
+        <div class="result-area" id="clickResults">
+            点击结果将显示在这里...
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. 表单输入测试</h2>
+        <p>测试Enter键模拟和表单提交功能</p>
+        
+        <form onsubmit="handleFormSubmit(event)">
+            <div class="form-group">
+                <label for="testInput">测试输入框 (按Enter提交):</label>
+                <input type="text" id="testInput" name="testInput" placeholder="输入文本后按Enter键" onkeypress="handleKeyPress(event)">
+            </div>
+            
+            <div class="form-group">
+                <label for="emailInput">邮箱输入:</label>
+                <input type="email" id="emailInput" name="emailInput" placeholder="test@example.com">
+            </div>
+            
+            <div class="form-group">
+                <label for="messageInput">消息输入:</label>
+                <textarea id="messageInput" name="messageInput" rows="3" placeholder="输入消息内容..."></textarea>
+            </div>
+            
+            <div class="button-group">
+                <button type="submit" class="primary-btn">提交表单</button>
+                <button type="reset" class="warning-btn">重置表单</button>
+            </div>
+        </form>
+        
+        <div class="result-area" id="formResults">
+            表单提交结果将显示在这里...
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. 交互元素测试</h2>
+        <p>测试各种交互元素的选择和操作</p>
+        
+        <div class="interactive-elements">
+            <div class="element-card">
+                <h4>链接元素</h4>
+                <a href="#" onclick="handleLinkClick(event, this)">测试链接 1</a><br>
+                <a href="https://example.com" target="_blank">外部链接</a><br>
+                <a href="mailto:test@example.com">邮件链接</a>
+            </div>
+            
+            <div class="element-card">
+                <h4>选择元素</h4>
+                <select onchange="handleSelectChange(this)">
+                    <option value="">请选择...</option>
+                    <option value="option1">选项 1</option>
+                    <option value="option2">选项 2</option>
+                    <option value="option3">选项 3</option>
+                </select>
+                <br><br>
+                <input type="checkbox" id="checkbox1" onchange="handleCheckboxChange(this)">
+                <label for="checkbox1">复选框 1</label><br>
+                <input type="checkbox" id="checkbox2" onchange="handleCheckboxChange(this)">
+                <label for="checkbox2">复选框 2</label>
+            </div>
+            
+            <div class="element-card">
+                <h4>状态指示器</h4>
+                <div>
+                    <span class="status-indicator status-active"></span>
+                    <span>活动状态</span>
+                </div>
+                <div>
+                    <span class="status-indicator status-inactive"></span>
+                    <span>非活动状态</span>
+                </div>
+                <button class="primary-btn" onclick="toggleStatus()">切换状态</button>
+            </div>
+            
+            <div class="element-card">
+                <h4>动态内容</h4>
+                <div id="dynamicContent">
+                    <p>初始内容</p>
+                </div>
+                <button class="success-btn" onclick="updateDynamicContent()">更新内容</button>
+                <button class="warning-btn" onclick="addDynamicElement()">添加元素</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. 连续操作测试区域</h2>
+        <p>用于测试操作绑定和连续执行功能</p>
+        
+        <div class="button-group">
+            <button class="primary-btn" onclick="sequenceStep(1, this)">步骤 1</button>
+            <button class="success-btn" onclick="sequenceStep(2, this)">步骤 2</button>
+            <button class="warning-btn" onclick="sequenceStep(3, this)">步骤 3</button>
+            <button class="danger-btn" onclick="sequenceStep(4, this)">步骤 4</button>
+        </div>
+        
+        <div class="form-group">
+            <input type="text" id="sequenceInput" placeholder="在此输入文本进行测试">
+        </div>
+        
+        <div class="result-area" id="sequenceResults">
+            <h4>执行序列:</h4>
+            <ol id="sequenceList"></ol>
+        </div>
+    </div>
+
+    <script>
+        let clickCount = 0;
+        let sequenceCount = 0;
+        
+        function handleClick(type, button) {
+            clickCount++;
+            document.getElementById('clickCount').textContent = clickCount;
+            
+            const results = document.getElementById('clickResults');
+            const timestamp = new Date().toLocaleTimeString();
+            results.innerHTML += `<div>[${timestamp}] ${type}按钮被点击 (第${clickCount}次)</div>`;
+            results.scrollTop = results.scrollHeight;
+            
+            // Visual feedback
+            button.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                button.style.transform = 'scale(1)';
+            }, 100);
+        }
+        
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                const input = event.target;
+                const results = document.getElementById('formResults');
+                const timestamp = new Date().toLocaleTimeString();
+                results.innerHTML += `<div>[${timestamp}] Enter键被按下，输入值: "${input.value}"</div>`;
+                results.scrollTop = results.scrollHeight;
+            }
+        }
+        
+        function handleFormSubmit(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const results = document.getElementById('formResults');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            let formContent = '';
+            for (let [key, value] of formData.entries()) {
+                formContent += `${key}: ${value}<br>`;
+            }
+            
+            results.innerHTML += `<div>[${timestamp}] 表单提交:<br>${formContent}</div>`;
+            results.scrollTop = results.scrollHeight;
+        }
+        
+        function handleLinkClick(event, link) {
+            event.preventDefault();
+            const results = document.getElementById('formResults');
+            const timestamp = new Date().toLocaleTimeString();
+            results.innerHTML += `<div>[${timestamp}] 链接被点击: ${link.textContent}</div>`;
+            results.scrollTop = results.scrollHeight;
+        }
+        
+        function handleSelectChange(select) {
+            const results = document.getElementById('formResults');
+            const timestamp = new Date().toLocaleTimeString();
+            results.innerHTML += `<div>[${timestamp}] 选择改变: ${select.value}</div>`;
+            results.scrollTop = results.scrollHeight;
+        }
+        
+        function handleCheckboxChange(checkbox) {
+            const results = document.getElementById('formResults');
+            const timestamp = new Date().toLocaleTimeString();
+            results.innerHTML += `<div>[${timestamp}] 复选框 ${checkbox.id}: ${checkbox.checked ? '选中' : '取消选中'}</div>`;
+            results.scrollTop = results.scrollHeight;
+        }
+        
+        function toggleStatus() {
+            const indicators = document.querySelectorAll('.status-indicator');
+            indicators.forEach(indicator => {
+                if (indicator.classList.contains('status-active')) {
+                    indicator.classList.remove('status-active');
+                    indicator.classList.add('status-inactive');
+                } else {
+                    indicator.classList.remove('status-inactive');
+                    indicator.classList.add('status-active');
+                }
+            });
+        }
+        
+        function updateDynamicContent() {
+            const content = document.getElementById('dynamicContent');
+            const timestamp = new Date().toLocaleTimeString();
+            content.innerHTML = `<p>内容已更新 - ${timestamp}</p>`;
+        }
+        
+        function addDynamicElement() {
+            const content = document.getElementById('dynamicContent');
+            const newElement = document.createElement('div');
+            newElement.innerHTML = `<button class="primary-btn" onclick="handleClick('dynamic', this)">动态按钮 ${Date.now()}</button>`;
+            content.appendChild(newElement);
+        }
+        
+        function sequenceStep(step, button) {
+            sequenceCount++;
+            const list = document.getElementById('sequenceList');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            const listItem = document.createElement('li');
+            listItem.innerHTML = `[${timestamp}] 执行步骤 ${step} (序号: ${sequenceCount})`;
+            list.appendChild(listItem);
+            
+            // Visual feedback
+            button.style.background = '#28a745';
+            button.style.transform = 'scale(1.05)';
+            setTimeout(() => {
+                button.style.background = '';
+                button.style.transform = 'scale(1)';
+            }, 500);
+            
+            // Scroll to show the new item
+            list.scrollTop = list.scrollHeight;
+        }
+        
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('增强功能测试页面已加载');
+            
+            // Add some initial content to results areas
+            document.getElementById('clickResults').innerHTML = '<div>准备进行点击测试...</div>';
+            document.getElementById('formResults').innerHTML = '<div>准备进行表单测试...</div>';
+            document.getElementById('sequenceList').innerHTML = '<li>准备进行连续操作测试...</li>';
+        });
+    </script>
+</body>
+</html>

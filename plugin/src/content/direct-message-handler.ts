@@ -15,7 +15,7 @@ export function registerContentScript(instance: any) {
 // 初始化消息监听器
 export function initializeMessageListener() {
   // 添加消息监听器，处理来自popup的消息
-  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     try {
       console.log('Direct message handler received message:', message);
       

@@ -3,7 +3,7 @@
  * Provides UI for defining operations on selected elements
  */
 
-import { Operation } from '../../../shared/types';
+// import { Operation } from '../../../shared/types';
 import { OPERATIONS } from '../../../shared/constants';
 
 export interface OperationConfig {

@@ -135,7 +135,7 @@ class BackgroundService {
       }
     } catch (error) {
       console.error('Error handling message:', error);
-      sendResponse({ success: false, error: error.message });
+      sendResponse({ success: false, error: (error as Error).message });
     }
   }
 
@@ -166,6 +166,6 @@ class BackgroundService {
 }
 
 // Initialize background service
-const backgroundService = new BackgroundService();
+new BackgroundService();
 
 export { BackgroundService };
