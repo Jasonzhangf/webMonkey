@@ -298,9 +298,8 @@ export class ElementSelector {
   public isValidTarget(element: HTMLElement): boolean {
     console.log('Validating target:', element, 'tagName:', element.tagName);
     
-    // Skip our own injected elements
-    if (element.classList.contains('wao-highlight') || 
-        element.classList.contains('wao-operation-menu') ||
+    // Skip our own injected elements (but NOT wao-highlight, as that's added to page elements)
+    if (element.classList.contains('wao-operation-menu') ||
         element.classList.contains('wao-indicator') ||
         element.classList.contains('wao-main-panel') ||
         element.closest('.wao-main-panel')) {
