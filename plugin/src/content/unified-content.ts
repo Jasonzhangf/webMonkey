@@ -444,12 +444,21 @@ class UnifiedContentScript {
   }
 
   private handleClick(event: MouseEvent): void {
-    if (!this.isCaptureMode) return;
+    console.log('Click event triggered, isCaptureMode:', this.isCaptureMode);
+    
+    if (!this.isCaptureMode) {
+      console.log('Not in capture mode, ignoring click');
+      return;
+    }
     
     const target = event.target as HTMLElement;
+    console.log('Click target:', target, 'tagName:', target.tagName);
     
     // 忽略面板元素
-    if (this.isPanelElement(target)) return;
+    if (this.isPanelElement(target)) {
+      console.log('Panel element clicked, ignoring');
+      return;
+    }
     
     // 阻止默认行为
     event.preventDefault();
@@ -457,7 +466,10 @@ class UnifiedContentScript {
     
     // 捕获元素
     if (this.elementSelector.isValidTarget(target)) {
+      console.log('Valid target, capturing element');
       this.captureElement(target);
+    } else {
+      console.log('Invalid target, not capturing');
     }
   }
 
@@ -475,15 +487,18 @@ class UnifiedContentScript {
 
   private toggleCaptureMode(): void {
     this.isCaptureMode = !this.isCaptureMode;
+    console.log('Capture mode toggled to:', this.isCaptureMode);
     
     const captureBtn = this.mainPanel?.querySelector('.wao-capture-btn');
     if (captureBtn) {
       if (this.isCaptureMode) {
         captureBtn.textContent = '停止捕获';
         captureBtn.classList.add('active');
+        console.log('Entered capture mode');
       } else {
         captureBtn.textContent = '开始捕获';
         captureBtn.classList.remove('active');
+        console.log('Exited capture mode');
         
         // 清除高亮
         if (this.lastHoveredElement) {
@@ -510,6 +525,8 @@ class UnifiedContentScript {
   }
 
   private captureElement(element: HTMLElement): void {
+    console.log('Capturing element:', element);
+    
     const selectors = this.elementSelector.generateSelectors(element);
     const elementData: ElementData = {
       selectors: selectors,
@@ -532,8 +549,12 @@ class UnifiedContentScript {
       timestamp: Date.now()
     };
     
+    console.log('Created captured element:', capturedElement);
+    
     this.capturedElements.push(capturedElement);
     element.classList.add('wao-captured');
+    
+    console.log('Total captured elements:', this.capturedElements.length);
     
     this.updateCaptureList();
     this.showNotification(`已捕获元素: ${capturedElement.description}`, 'success');

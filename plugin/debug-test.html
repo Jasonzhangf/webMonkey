@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>调试测试页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .test-button {
+            padding: 10px 20px;
+            margin: 10px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .test-button:hover {
+            background: #0056b3;
+        }
+        
+        .test-input {
+            padding: 8px 12px;
+            margin: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .test-div {
+            padding: 15px;
+            margin: 10px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+        }
+        
+        .debug-info {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: #333;
+            color: white;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-width: 300px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <h1>调试测试页面</h1>
+    
+    <div class="debug-info" id="debugInfo">
+        调试信息将显示在这里...
+    </div>
+    
+    <h2>测试元素</h2>
+    
+    <button class="test-button" onclick="handleClick('button1')">测试按钮 1</button>
+    <button class="test-button" onclick="handleClick('button2')">测试按钮 2</button>
+    
+    <br>
+    
+    <input type="text" class="test-input" placeholder="测试输入框 1" id="input1">
+    <input type="text" class="test-input" placeholder="测试输入框 2" id="input2">
+    
+    <br>
+    
+    <div class="test-div" onclick="handleClick('div1')">
+        <h3>测试DIV 1</h3>
+        <p>这是一个可点击的DIV元素，用于测试捕获功能。</p>
+    </div>
+    
+    <div class="test-div" onclick="handleClick('div2')">
+        <h3>测试DIV 2</h3>
+        <p>这是另一个可点击的DIV元素。</p>
+        <button class="test-button" onclick="handleClick('nested-button')">嵌套按钮</button>
+    </div>
+    
+    <h2>调试说明</h2>
+    <ol>
+        <li>打开浏览器开发者工具 (F12)</li>
+        <li>查看Console标签页</li>
+        <li>点击右上角的"开始捕获"按钮</li>
+        <li>尝试点击上面的测试元素</li>
+        <li>观察控制台中的调试信息</li>
+    </ol>
+    
+    <h2>预期行为</h2>
+    <ul>
+        <li>鼠标悬停时应该看到蓝色高亮</li>
+        <li>点击元素时应该在控制台看到调试信息</li>
+        <li>成功捕获时应该看到通知消息</li>
+        <li>捕获列表应该显示新增的元素</li>
+    </ul>
+
+    <script>
+        let clickCount = 0;
+        
+        function handleClick(elementId) {
+            clickCount++;
+            const debugInfo = document.getElementById('debugInfo');
+            debugInfo.innerHTML = `
+                最后点击: ${elementId}<br>
+                点击次数: ${clickCount}<br>
+                时间: ${new Date().toLocaleTimeString()}
+            `;
+            
+            console.log(`Page element clicked: ${elementId} at ${new Date().toLocaleTimeString()}`);
+        }
+        
+        // 页面加载完成后的调试信息
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Debug test page loaded');
+            console.log('Looking for unified content script...');
+            
+            // 检查是否有内容脚本加载
+            setTimeout(() => {
+                if (window.waoUnifiedContentScriptInitialized) {
+                    console.log('✅ Unified content script detected');
+                } else {
+                    console.log('❌ Unified content script not detected');
+                }
+            }, 1000);
+        });
+        
+        // 监听点击事件用于调试
+        document.addEventListener('click', function(event) {
+            console.log('Document click event:', event.target);
+        }, true);
+    </script>
+</body>
+</html>

@@ -299,7 +299,9 @@ export class ElementSelector {
     // Skip our own injected elements
     if (element.classList.contains('wao-highlight') || 
         element.classList.contains('wao-operation-menu') ||
-        element.classList.contains('wao-indicator')) {
+        element.classList.contains('wao-indicator') ||
+        element.classList.contains('wao-main-panel') ||
+        element.closest('.wao-main-panel')) {
       return false;
     }
     
