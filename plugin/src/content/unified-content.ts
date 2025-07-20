@@ -290,11 +290,7 @@ class UnifiedContentScript {
         transition: all 0.2s ease !important;
       }
       
-      .wao-captured {
-        outline: 2px solid #28a745 !important;
-        outline-offset: 2px !important;
-        background-color: rgba(40, 167, 69, 0.1) !important;
-      }
+      /* 移除wao-captured样式，允许重复捕获同一元素 */
       
       /* 最小化状态 */
       .wao-main-panel.minimized {
@@ -509,6 +505,27 @@ class UnifiedContentScript {
     }
   }
 
+  private exitCaptureMode(): void {
+    if (this.isCaptureMode) {
+      this.isCaptureMode = false;
+      console.log('Auto-exited capture mode');
+      
+      const captureBtn = this.mainPanel?.querySelector('.wao-capture-btn');
+      if (captureBtn) {
+        captureBtn.textContent = '开始捕获';
+        captureBtn.classList.remove('active');
+      }
+      
+      // 清除高亮
+      if (this.lastHoveredElement) {
+        this.lastHoveredElement.classList.remove('wao-highlight');
+        this.lastHoveredElement = null;
+      }
+      
+      this.showNotification('操作完成，已退出捕获模式', 'info');
+    }
+  }
+
   private toggleMinimize(): void {
     if (!this.mainPanel) return;
     
@@ -551,13 +568,16 @@ class UnifiedContentScript {
     
     console.log('Created captured element:', capturedElement);
     
+    // 允许重复捕获同一个元素，每次都创建新的记录
     this.capturedElements.push(capturedElement);
-    element.classList.add('wao-captured');
+    
+    // 不再添加wao-captured类，避免视觉混乱
+    // element.classList.add('wao-captured');
     
     console.log('Total captured elements:', this.capturedElements.length);
     
     this.updateCaptureList();
-    this.showNotification(`已捕获元素: ${capturedElement.description}`, 'success');
+    this.showNotification(`已捕获元素: ${capturedElement.description} (第${this.capturedElements.length}次)`, 'success');
   }
 
   private generateElementDescription(element: HTMLElement): string {
@@ -722,6 +742,8 @@ class UnifiedContentScript {
       const params = action === 'input' ? { text: inputText?.value || '' } : {};
       this.simulateOperation(element, action, params);
       closeDialog();
+      // 立即模拟后退出捕获模式
+      this.exitCaptureMode();
     });
     
     addToListBtn?.addEventListener('click', () => {
@@ -729,6 +751,8 @@ class UnifiedContentScript {
       const waitAfter = parseInt(waitTime.value) || 1000;
       this.addToExecutionList(element, action, params, waitAfter);
       closeDialog();
+      // 添加到执行列表后退出捕获模式
+      this.exitCaptureMode();
     });
     
     cancelBtn?.addEventListener('click', closeDialog);
