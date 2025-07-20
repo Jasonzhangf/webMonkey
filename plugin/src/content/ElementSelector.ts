@@ -296,47 +296,33 @@ export class ElementSelector {
   }
 
   public isValidTarget(element: HTMLElement): boolean {
+    console.log('Validating target:', element, 'tagName:', element.tagName);
+    
     // Skip our own injected elements
     if (element.classList.contains('wao-highlight') || 
         element.classList.contains('wao-operation-menu') ||
         element.classList.contains('wao-indicator') ||
         element.classList.contains('wao-main-panel') ||
         element.closest('.wao-main-panel')) {
+      console.log('Skipping: our own injected element');
       return false;
     }
     
     // Skip script, style, and meta elements
-    const skipTags = ['SCRIPT', 'STYLE', 'META', 'LINK', 'TITLE', 'HEAD'];
+    const skipTags = ['SCRIPT', 'STYLE', 'META', 'LINK', 'TITLE', 'HEAD', 'HTML', 'BODY'];
     if (skipTags.includes(element.tagName)) {
+      console.log('Skipping: skip tag', element.tagName);
       return false;
     }
     
-    // Skip hidden elements
+    // 简化验证逻辑 - 只要不是隐藏元素就允许捕获
     const style = window.getComputedStyle(element);
-    if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+    if (style.display === 'none' || style.visibility === 'hidden') {
+      console.log('Skipping: hidden element');
       return false;
     }
     
-    // Skip elements that are too small
-    const rect = element.getBoundingClientRect();
-    if (rect.width < 1 || rect.height < 1) {
-      return false;
-    }
-    
-    // Skip elements without meaningful content (unless they're interactive)
-    const interactiveTags = ['INPUT', 'BUTTON', 'SELECT', 'TEXTAREA', 'A', 'LABEL'];
-    const hasInteractiveRole = element.getAttribute('role') === 'button' || 
-                              element.getAttribute('role') === 'link' ||
-                              element.hasAttribute('onclick') ||
-                              element.hasAttribute('href');
-    
-    if (!interactiveTags.includes(element.tagName) && !hasInteractiveRole) {
-      const text = element.textContent?.trim();
-      if (!text || text.length === 0) {
-        return false;
-      }
-    }
-    
+    console.log('Valid: element passed validation');
     return true;
   }
 
