@@ -55,6 +55,21 @@ class UnifiedContentScript {
     this.createMainPanel();
     this.setupEventListeners();
     this.setupElementCapture();
+    this.setupMessageListener();
+  }
+
+  private setupMessageListener(): void {
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+      if (request.action === 'toggleUIPanel') {
+        if (this.mainPanel) {
+          const isVisible = this.mainPanel.style.display !== 'none';
+          this.mainPanel.style.display = isVisible ? 'none' : 'flex';
+          sendResponse({status: 'done', isVisible: !isVisible});
+        }
+      }
+      // Return true to indicate you wish to send a response asynchronously
+      return true;
+    });
   }
 
   private injectStyles(): void {
@@ -443,6 +458,7 @@ class UnifiedContentScript {
     
     document.body.appendChild(panel);
     this.mainPanel = panel;
+    this.mainPanel.style.display = 'none';
     
     // 获取子元素引用
     this.captureList = panel.querySelector('.wao-capture-list');
@@ -543,7 +559,7 @@ class UnifiedContentScript {
   }
 
   private isPanelElement(element: HTMLElement): boolean {
-    return element.closest('.wao-main-panel') !== null;
+    return element.closest('.wao-main-panel, .wao-operation-dialog') !== null;
   }
 
   private toggleCaptureMode(): void {
@@ -592,17 +608,8 @@ class UnifiedContentScript {
   }
 
   private toggleMinimize(): void {
-    if (!this.mainPanel) return;
-    
-    const isMinimized = this.mainPanel.classList.contains('minimized');
-    const minimizeBtn = this.mainPanel.querySelector('.wao-minimize-btn');
-    
-    if (isMinimized) {
-      this.mainPanel.classList.remove('minimized');
-      if (minimizeBtn) minimizeBtn.textContent = '最小化';
-    } else {
-      this.mainPanel.classList.add('minimized');
-      if (minimizeBtn) minimizeBtn.textContent = '展开';
+    if (this.mainPanel) {
+      this.mainPanel.style.display = 'none';
     }
   }
 
@@ -852,9 +859,13 @@ class UnifiedContentScript {
     const inputText = dialog.querySelector('.wao-input-text') as HTMLInputElement;
     const waitTime = dialog.querySelector('.wao-wait-time') as HTMLInputElement;
     
-    const closeDialog = () => dialog.remove();
+    const closeDialog = () => {
+      if(dialog.parentElement)
+      dialog.remove();
+    }
     
     simulateBtn?.addEventListener('click', () => {
+      console.log('Simulate button clicked');
       const params = action === 'input' ? { text: inputText?.value || '' } : {};
       this.simulateOperation(element, action, params);
       closeDialog();
@@ -863,6 +874,7 @@ class UnifiedContentScript {
     });
     
     addToListBtn?.addEventListener('click', () => {
+      console.log('Add to list button clicked');
       const params = action === 'input' ? { text: inputText?.value || '' } : {};
       const waitAfter = parseInt(waitTime.value) || 1000;
       this.addToExecutionList(element, action, params, waitAfter);
@@ -871,7 +883,10 @@ class UnifiedContentScript {
       this.exitCaptureMode();
     });
     
-    cancelBtn?.addEventListener('click', closeDialog);
+    cancelBtn?.addEventListener('click',() => {
+      console.log('Cancel button clicked');
+      closeDialog();
+    } );
   }
 
   private getActionName(action: string): string {

@@ -30,7 +30,7 @@ class SimplePopup {
     
     // 显示菜单
     document.getElementById('showMenu').addEventListener('click', () => {
-      this.showFloatingMenu();
+      this.toggleUIPanel();
     });
     
     // 打开测试页面
@@ -146,7 +146,7 @@ class SimplePopup {
     }
   }
   
-  async showFloatingMenu() {
+  async toggleUIPanel() {
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       
@@ -155,18 +155,23 @@ class SimplePopup {
         return;
       }
       
-      await chrome.tabs.sendMessage(tab.id, {
-        type: 'show_floating_menu'
+      chrome.tabs.sendMessage(tab.id, { action: 'toggleUIPanel' }, (response) => {
+        if (chrome.runtime.lastError) {
+          console.error(chrome.runtime.lastError.message);
+          alert('操作失败，请刷新页面后重试');
+        } else {
+          console.log('UI panel toggled:', response);
+        }
       });
       
       window.close();
       
     } catch (error) {
-      console.error('显示浮动菜单失败:', error);
+      console.error('切换UI面板失败:', error);
       alert('操作失败');
     }
   }
-  
+
   openTestPage() {
     chrome.tabs.create({
       url: chrome.runtime.getURL('test-page.html')

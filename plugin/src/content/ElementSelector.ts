@@ -298,12 +298,16 @@ export class ElementSelector {
   public isValidTarget(element: HTMLElement): boolean {
     console.log('Validating target:', element, 'tagName:', element.tagName);
     
-    // Skip our own injected elements (but NOT wao-highlight, as that's added to page elements)
-    if (element.classList.contains('wao-operation-menu') ||
-        element.classList.contains('wao-indicator') ||
-        element.classList.contains('wao-main-panel') ||
-        element.closest('.wao-main-panel')) {
-      console.log('Skipping: our own injected element');
+    // Skip our own injected UI elements by checking for the 'wao-' prefix
+    if (Array.from(element.classList).some(cls => cls.startsWith('wao-') && cls !== 'wao-highlight')) {
+      console.log('Skipping: our own injected element with wao- prefix');
+      return false;
+    }
+    
+    // Check if element is inside any of our UI containers
+    if (element.closest('.wao-main-panel') || 
+        element.closest('.wao-floating-menu')) {
+      console.log('Skipping: element inside our UI container');
       return false;
     }
     
