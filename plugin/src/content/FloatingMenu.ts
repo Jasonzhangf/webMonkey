@@ -94,7 +94,7 @@ export class FloatingMenu {
     collapseBtn.style.lineHeight = '1';
     collapseBtn.onclick = (e) => {
       e.stopPropagation();
-      this.toggleCollapse();
+      this.removeMenu();
     };
     controls.appendChild(collapseBtn);
     

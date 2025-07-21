@@ -296,10 +296,25 @@ export class ElementSelector {
   }
 
   public isValidTarget(element: HTMLElement): boolean {
+<<<<<<< HEAD
     // Skip our own injected elements
     if (element.classList.contains('wao-highlight') || 
         element.classList.contains('wao-operation-menu') ||
         element.classList.contains('wao-indicator')) {
+=======
+    console.log('Validating target:', element, 'tagName:', element.tagName);
+    
+    // Skip our own injected UI elements by checking for the 'wao-' prefix
+    if (Array.from(element.classList).some(cls => cls.startsWith('wao-') && cls !== 'wao-highlight')) {
+      console.log('Skipping: our own injected element with wao- prefix');
+      return false;
+    }
+    
+    // Check if element is inside any of our UI containers
+    if (element.closest('.wao-main-panel') || 
+        element.closest('.wao-floating-menu')) {
+      console.log('Skipping: element inside our UI container');
+>>>>>>> 9fec603 (feat: 优化UI交互并移除测试文件)
       return false;
     }
     
