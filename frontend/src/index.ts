@@ -5,24 +5,18 @@
 
 import { CanvasEditor } from './canvas/CanvasEditor';
 import { NodeRegistry } from './nodes/NodeRegistry';
-import { CommunicationManager } from './utils/CommunicationManager';
 
 class WebAutomationOrchestrator {
   private canvasEditor: CanvasEditor;
   private nodeRegistry: NodeRegistry;
-  private communicationManager: CommunicationManager;
 
   constructor() {
     this.nodeRegistry = new NodeRegistry();
-    this.communicationManager = new CommunicationManager();
-    this.canvasEditor = new CanvasEditor(this.nodeRegistry, this.communicationManager);
+    this.canvasEditor = new CanvasEditor(this.nodeRegistry);
   }
 
   async initialize(): Promise<void> {
     console.log('Initializing Web Automation Orchestrator...');
-    
-    // Initialize communication with backend
-    await this.communicationManager.connect();
     
     // Register built-in nodes
     this.nodeRegistry.registerBuiltinNodes();
@@ -37,7 +31,6 @@ class WebAutomationOrchestrator {
     console.log('Shutting down Web Automation Orchestrator...');
     
     this.canvasEditor.cleanup();
-    await this.communicationManager.disconnect();
     
     console.log('Web Automation Orchestrator shut down successfully');
   }

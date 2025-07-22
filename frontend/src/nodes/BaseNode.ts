@@ -1,0 +1,97 @@
+/**
+ * Base Node - 基础节点
+ * The base class for all nodes in the canvas editor
+ */
+
+export interface NodePosition {
+  x: number;
+  y: number;
+}
+
+export interface Port {
+  id: string;
+  nodeId: string;
+  position: NodePosition;
+  isInput: boolean;
+}
+
+export interface NodeConfig {
+  position: NodePosition;
+  title: string;
+}
+
+export interface WorkflowData {
+  payload: any;
+  errors: string[];
+}
+
+export type NodeExecutionState = 'idle' | 'running' | 'completed' | 'failed';
+
+export abstract class BaseNode {
+  public id: string;
+  public type: string;
+  private _position: NodePosition;
+  public width: number = 180;
+  public height: number = 80;
+  public title: string;
+  public inputs: Port[] = [];
+  public outputs: Port[] = [];
+  public executionState: NodeExecutionState = 'idle';
+
+  public get position(): NodePosition {
+    return this._position;
+  }
+
+  public set position(newPosition: NodePosition) {
+    this._position = newPosition;
+    this.updatePortPositions();
+  }
+
+  public properties: Record<string, any> = {};
+
+  constructor(position: NodePosition, title: string) {
+    this.id = crypto.randomUUID();
+    this.type = this.constructor.name.replace(/Node$/, '');
+    this._position = position;
+    this.title = title;
+  }
+
+  public abstract execute(input: WorkflowData): Promise<{ [portId: string]: WorkflowData }>;
+  
+  public isInside(x: number, y: number): boolean {
+    return x >= this.position.x && x <= this.position.x + this.width &&
+           y >= this.position.y && y <= this.position.y + this.height;
+  }
+
+
+  protected updatePortPositions(): void {
+    this.inputs.forEach((port, index) => {
+      port.position = {
+        x: this.position.x,
+        y: this.position.y + (this.height / (this.inputs.length + 1)) * (index + 1)
+      };
+      port.nodeId = this.id;
+    });
+
+    this.outputs.forEach((port, index) => {
+      port.position = {
+        x: this.position.x + this.width,
+        y: this.position.y + (this.height / (this.outputs.length + 1)) * (index + 1)
+      };
+      port.nodeId = this.id;
+    });
+  }
+
+
+  public getPortAt(x: number, y: number): Port | null {
+    for (const port of [...this.inputs, ...this.outputs]) {
+      const dist = Math.sqrt(Math.pow(x - port.position.x, 2) + Math.pow(y - port.position.y, 2));
+      if (dist <= 5) {
+        return port;
+      }
+    }
+    return null;
+  }
+}
+
+export type NodeClass = new (position: NodePosition) => BaseNode;
