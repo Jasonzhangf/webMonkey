@@ -10,6 +10,9 @@ export class CanvasRenderer {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private nodeRenderer: NodeRenderer;
+  private zoomLevel: number = 1.0;
+  private panX: number = 0;
+  private panY: number = 0;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -20,52 +23,91 @@ export class CanvasRenderer {
   public render(
     nodes: BaseNode[], 
     connections: Connection[], 
-    interactionState: InteractionState
+    interactionState: InteractionState,
+    zoomLevel?: number,
+    panX?: number,
+    panY?: number
   ): void {
+    // 更新缩放和平移参数
+    if (zoomLevel !== undefined) this.zoomLevel = zoomLevel;
+    if (panX !== undefined) this.panX = panX;
+    if (panY !== undefined) this.panY = panY;
+    
+    // 保存当前的变换状态
+    this.ctx.save();
+    
+    // 清除整个canvas（在变换之前）
+    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    
+    // 应用缩放和平移变换
+    this.ctx.translate(this.panX, this.panY);
+    this.ctx.scale(this.zoomLevel, this.zoomLevel);
+    
+    // 绘制内容
     this.drawGrid();
     this.drawConnections(connections, interactionState);
     this.drawNodes(nodes, interactionState.selectedNode);
     this.drawTempConnection(interactionState);
+    
+    // 恢复变换状态
+    this.ctx.restore();
   }
 
   private drawGrid(): void {
     const gridSize = 20;
     const largeGridSize = gridSize * 5;
+    
+    // 计算可见区域的范围
+    const visibleLeft = -this.panX / this.zoomLevel;
+    const visibleTop = -this.panY / this.zoomLevel;
+    const visibleRight = visibleLeft + this.canvas.width / this.zoomLevel;
+    const visibleBottom = visibleTop + this.canvas.height / this.zoomLevel;
+    
+    // 计算网格线的起始和结束位置
+    const startX = Math.floor(visibleLeft / gridSize) * gridSize;
+    const endX = Math.ceil(visibleRight / gridSize) * gridSize;
+    const startY = Math.floor(visibleTop / gridSize) * gridSize;
+    const endY = Math.ceil(visibleBottom / gridSize) * gridSize;
 
     // Draw small grid
     this.ctx.strokeStyle = '#333';
-    this.ctx.lineWidth = 0.5;
+    this.ctx.lineWidth = 0.5 / this.zoomLevel; // 调整线宽以适应缩放
     
-    for (let x = 0; x < this.canvas.width; x += gridSize) {
+    for (let x = startX; x <= endX; x += gridSize) {
       this.ctx.beginPath();
-      this.ctx.moveTo(x, 0);
-      this.ctx.lineTo(x, this.canvas.height);
+      this.ctx.moveTo(x, visibleTop);
+      this.ctx.lineTo(x, visibleBottom);
       this.ctx.stroke();
     }
 
-    for (let y = 0; y < this.canvas.height; y += gridSize) {
+    for (let y = startY; y <= endY; y += gridSize) {
       this.ctx.beginPath();
-      this.ctx.moveTo(0, y);
-      this.ctx.lineTo(this.canvas.width, y);
+      this.ctx.moveTo(visibleLeft, y);
+      this.ctx.lineTo(visibleRight, y);
       this.ctx.stroke();
     }
 
     // Draw large grid
     this.ctx.strokeStyle = '#444';
-    this.ctx.lineWidth = 1;
+    this.ctx.lineWidth = 1 / this.zoomLevel; // 调整线宽以适应缩放
     
-    for (let x = 0; x < this.canvas.width; x += largeGridSize) {
+    const largeStartX = Math.floor(visibleLeft / largeGridSize) * largeGridSize;
+    const largeEndX = Math.ceil(visibleRight / largeGridSize) * largeGridSize;
+    const largeStartY = Math.floor(visibleTop / largeGridSize) * largeGridSize;
+    const largeEndY = Math.ceil(visibleBottom / largeGridSize) * largeGridSize;
+    
+    for (let x = largeStartX; x <= largeEndX; x += largeGridSize) {
       this.ctx.beginPath();
-      this.ctx.moveTo(x, 0);
-      this.ctx.lineTo(x, this.canvas.height);
+      this.ctx.moveTo(x, visibleTop);
+      this.ctx.lineTo(x, visibleBottom);
       this.ctx.stroke();
     }
 
-    for (let y = 0; y < this.canvas.height; y += largeGridSize) {
+    for (let y = largeStartY; y <= largeEndY; y += largeGridSize) {
       this.ctx.beginPath();
-      this.ctx.moveTo(0, y);
-      this.ctx.lineTo(this.canvas.width, y);
+      this.ctx.moveTo(visibleLeft, y);
+      this.ctx.lineTo(visibleRight, y);
       this.ctx.stroke();
     }
   }

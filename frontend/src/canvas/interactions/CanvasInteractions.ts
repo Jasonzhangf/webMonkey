@@ -20,6 +20,14 @@ export class CanvasInteractions {
   private connections: Connection[] = [];
   private nodeRegistry: NodeRegistry;
   private onRender: () => void;
+  
+  // 缩放功能相关属性
+  private zoomLevel: number = 1.0;
+  private minZoom: number = 0.25;
+  private maxZoom: number = 3.0;
+  private zoomStep: number = 0.1;
+  private panX: number = 0;
+  private panY: number = 0;
 
   constructor(
     canvas: HTMLCanvasElement, 
@@ -63,6 +71,7 @@ export class CanvasInteractions {
     this.canvas.addEventListener('mouseup', this.handleMouseUp.bind(this));
     this.canvas.addEventListener('contextmenu', this.handleContextMenu.bind(this));
     this.canvas.addEventListener('dblclick', this.handleDoubleClick.bind(this));
+    this.canvas.addEventListener('wheel', this.handleWheel.bind(this), { passive: false });
     window.addEventListener('keydown', this.handleKeyDown.bind(this));
   }
 
@@ -222,9 +231,13 @@ export class CanvasInteractions {
 
   private getMousePosition(event: MouseEvent): { x: number, y: number } {
     const rect = this.canvas.getBoundingClientRect();
+    const canvasX = event.clientX - rect.left;
+    const canvasY = event.clientY - rect.top;
+    
+    // 转换为世界坐标（考虑缩放和平移）
     return {
-      x: event.clientX - rect.left,
-      y: event.clientY - rect.top
+      x: (canvasX - this.panX) / this.zoomLevel,
+      y: (canvasY - this.panY) / this.zoomLevel
     };
   }
 
@@ -352,5 +365,110 @@ export class CanvasInteractions {
     }
     
     return clonedNode!;
+  }
+
+  private handleWheel(event: WheelEvent): void {
+    // 只有当按住Ctrl键时才处理缩放
+    if (!event.ctrlKey) {
+      return;
+    }
+    
+    event.preventDefault();
+    
+    // 获取鼠标在canvas上的位置
+    const rect = this.canvas.getBoundingClientRect();
+    const mouseX = event.clientX - rect.left;
+    const mouseY = event.clientY - rect.top;
+    
+    // 计算缩放方向和新的缩放级别
+    const zoomDelta = event.deltaY > 0 ? -this.zoomStep : this.zoomStep;
+    const newZoomLevel = Math.max(this.minZoom, Math.min(this.maxZoom, this.zoomLevel + zoomDelta));
+    
+    if (newZoomLevel !== this.zoomLevel) {
+      // 计算缩放前鼠标位置对应的世界坐标
+      const worldX = (mouseX - this.panX) / this.zoomLevel;
+      const worldY = (mouseY - this.panY) / this.zoomLevel;
+      
+      // 更新缩放级别
+      this.zoomLevel = newZoomLevel;
+      
+      // 计算新的平移位置，使鼠标指向的点保持不变
+      this.panX = mouseX - worldX * this.zoomLevel;
+      this.panY = mouseY - worldY * this.zoomLevel;
+      
+      // 重新渲染
+      this.onRender();
+      
+      // 显示缩放级别提示
+      this.showZoomIndicator();
+    }
+  }
+  
+  // 获取平移位置的公共方法  
+  public getPanX(): number {
+    return this.panX;
+  }
+  
+  public getPanY(): number {
+    return this.panY;
+  }
+  
+  private showZoomIndicator(): void {
+    // 创建缩放级别指示器
+    const indicator = document.getElementById('zoom-indicator') || this.createZoomIndicator();
+    
+    // 更新显示内容
+    indicator.textContent = `${Math.round(this.zoomLevel * 100)}%`;
+    indicator.style.opacity = '1';
+    
+    // 3秒后自动隐藏
+    clearTimeout((indicator as any).hideTimeout);
+    (indicator as any).hideTimeout = setTimeout(() => {
+      indicator.style.opacity = '0';
+    }, 2000);
+  }
+  
+  private createZoomIndicator(): HTMLElement {
+    const indicator = document.createElement('div');
+    indicator.id = 'zoom-indicator';
+    indicator.style.cssText = `
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(45, 45, 45, 0.9);
+      color: #FFC107;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+      font-size: 14px;
+      font-weight: bold;
+      z-index: 1000;
+      border: 1px solid #FFC107;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    `;
+    
+    document.body.appendChild(indicator);
+    return indicator;
+  }
+  
+  // 获取当前缩放级别的公共方法
+  public getZoomLevel(): number {
+    return this.zoomLevel;
+  }
+  
+  // 设置缩放级别的公共方法
+  public setZoomLevel(zoomLevel: number): void {
+    this.zoomLevel = Math.max(this.minZoom, Math.min(this.maxZoom, zoomLevel));
+    this.onRender();
+    this.showZoomIndicator();
+  }
+  
+  // 重置缩放级别
+  public resetZoom(): void {
+    this.setZoomLevel(1.0);
   }
 }

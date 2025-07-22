@@ -187,6 +187,166 @@ export class NodePropertyRenderers {
     }, false, ['true', 'false']);
   }
 
+  // 浏览器工作流节点属性渲染方法
+
+  public renderWorkerInitializationProperties(node: BaseNode): void {
+    // 无头模式
+    this.createPropertyCard('headless-card', 'Headless Mode', 'select', node.properties.headless ? 'true' : 'false', (value) => {
+      node.properties.headless = value === 'true';
+      this.onNodeUpdate(node);
+    }, false, ['true', 'false']);
+
+    // 视口宽度
+    this.createPropertyCard('viewport-width-card', 'Viewport Width', 'input', node.properties.viewportWidth?.toString() || '1920', (value) => {
+      node.properties.viewportWidth = parseInt(value) || 1920;
+      this.onNodeUpdate(node);
+    }, false, undefined, 'number');
+
+    // 视口高度
+    this.createPropertyCard('viewport-height-card', 'Viewport Height', 'input', node.properties.viewportHeight?.toString() || '1080', (value) => {
+      node.properties.viewportHeight = parseInt(value) || 1080;
+      this.onNodeUpdate(node);
+    }, false, undefined, 'number');
+
+    // 用户代理
+    this.createPropertyCard('user-agent-card', 'User Agent', 'textarea', node.properties.userAgent || '', (value) => {
+      node.properties.userAgent = value;
+      this.onNodeUpdate(node);
+    });
+
+    // 初始URL
+    this.createPropertyCard('initial-url-card', 'Initial URL', 'input', node.properties.initialUrl || '', (value) => {
+      node.properties.initialUrl = value;
+      this.onNodeUpdate(node);
+    });
+
+    // 超时时间
+    this.createPropertyCard('timeout-card', 'Timeout (ms)', 'input', node.properties.timeout?.toString() || '30000', (value) => {
+      node.properties.timeout = parseInt(value) || 30000;
+      this.onNodeUpdate(node);
+    }, false, undefined, 'number');
+
+    // 等待加载状态
+    this.createPropertyCard('wait-for-load-card', 'Wait For Load State', 'select', node.properties.waitForLoadState || 'load', (value) => {
+      node.properties.waitForLoadState = value;
+      this.onNodeUpdate(node);
+    }, false, ['load', 'domcontentloaded', 'networkidle']);
+
+    // Cookies配置 (JSON格式)
+    this.createPropertyCard('cookies-json-card', 'Cookies (JSON)', 'textarea', node.properties.cookiesJson || '[]', (value) => {
+      node.properties.cookiesJson = value;
+      this.onNodeUpdate(node);
+    });
+
+    // localStorage配置 (JSON格式)
+    this.createPropertyCard('local-storage-card', 'Local Storage (JSON)', 'textarea', node.properties.localStorageJson || '{}', (value) => {
+      node.properties.localStorageJson = value;
+      this.onNodeUpdate(node);
+    });
+  }
+
+  public renderPageManagementProperties(node: BaseNode): void {
+    // 页面操作类型
+    this.createPropertyCard('action-card', 'Page Action', 'select', node.properties.action || 'create', (value) => {
+      node.properties.action = value;
+      this.onNodeUpdate(node);
+    }, false, ['create', 'switch', 'close', 'navigate', 'reload', 'list']);
+
+    // 页面ID (用于切换和关闭)
+    this.createPropertyCard('page-id-card', 'Page ID', 'input', node.properties.pageId || '', (value) => {
+      node.properties.pageId = value;
+      this.onNodeUpdate(node);
+    });
+
+    // URL (用于创建和导航)
+    this.createPropertyCard('url-card', 'URL', 'input', node.properties.url || '', (value) => {
+      node.properties.url = value;
+      this.onNodeUpdate(node);
+    });
+
+    // 等待加载完成
+    this.createPropertyCard('wait-for-load-card', 'Wait For Load', 'select', node.properties.waitForLoad !== false ? 'true' : 'false', (value) => {
+      node.properties.waitForLoad = value === 'true';
+      this.onNodeUpdate(node);
+    }, false, ['true', 'false']);
+
+    // 重用已存在页面
+    this.createPropertyCard('reuse-existing-card', 'Reuse Existing Page', 'select', node.properties.reuseExisting ? 'true' : 'false', (value) => {
+      node.properties.reuseExisting = value === 'true';
+      this.onNodeUpdate(node);
+    }, false, ['true', 'false']);
+
+    // 超时时间
+    this.createPropertyCard('timeout-card', 'Timeout (ms)', 'input', node.properties.timeout?.toString() || '30000', (value) => {
+      node.properties.timeout = parseInt(value) || 30000;
+      this.onNodeUpdate(node);
+    }, false, undefined, 'number');
+  }
+
+  public renderActionV2Properties(node: BaseNode): void {
+    // Worker绑定
+    this.createPropertyCard('worker-id-card', 'Worker ID', 'input', node.workerId || '', (value) => {
+      node.bindToWorker(value);
+      this.onNodeUpdate(node);
+    });
+
+    // Page绑定
+    this.createPropertyCard('page-id-card', 'Page ID', 'input', node.pageId || '', (value) => {
+      node.bindToPage(value);
+      this.onNodeUpdate(node);
+    });
+
+    // 全局超时
+    this.createPropertyCard('global-timeout-card', 'Global Timeout (ms)', 'input', node.properties.globalTimeout?.toString() || '30000', (value) => {
+      node.properties.globalTimeout = parseInt(value) || 30000;
+      this.onNodeUpdate(node);
+    }, false, undefined, 'number');
+
+    // 并行执行序列
+    this.createPropertyCard('parallel-card', 'Parallel Execution', 'select', node.properties.parallel ? 'true' : 'false', (value) => {
+      node.properties.parallel = value === 'true';
+      this.onNodeUpdate(node);
+    }, false, ['true', 'false']);
+
+    // 遇到错误停止
+    this.createPropertyCard('on-error-stop-card', 'Stop On Error', 'select', node.properties.onErrorStop !== false ? 'true' : 'false', (value) => {
+      node.properties.onErrorStop = value === 'true';
+      this.onNodeUpdate(node);
+    }, false, ['true', 'false']);
+
+    // 简化操作配置
+    this.createPropertyCard('simple-selector-card', 'Simple Selector', 'input', node.properties.simpleSelector || '', (value) => {
+      node.properties.simpleSelector = value;
+      this.onNodeUpdate(node);
+    });
+
+    this.createPropertyCard('simple-action-card', 'Simple Action', 'select', node.properties.simpleAction || 'click', (value) => {
+      node.properties.simpleAction = value;
+      this.onNodeUpdate(node);
+    }, false, ['click', 'input', 'hover', 'scroll', 'extract', 'screenshot', 'navigate']);
+
+    this.createPropertyCard('simple-text-card', 'Simple Text', 'input', node.properties.simpleText || '', (value) => {
+      node.properties.simpleText = value;
+      this.onNodeUpdate(node);
+    });
+
+    this.createPropertyCard('simple-wait-card', 'Simple Wait (ms)', 'input', node.properties.simpleWaitTime?.toString() || '1000', (value) => {
+      node.properties.simpleWaitTime = parseInt(value) || 1000;
+      this.onNodeUpdate(node);
+    }, false, undefined, 'number');
+
+    // 高级配置 (JSON编辑器)
+    this.createPropertyCard('sequences-json-card', 'Execution Sequences (JSON)', 'textarea', node.properties.sequencesJson || '', (value) => {
+      node.properties.sequencesJson = value;
+      this.onNodeUpdate(node);
+    });
+
+    this.createPropertyCard('output-containers-card', 'Output Containers (JSON)', 'textarea', node.properties.outputContainersJson || '', (value) => {
+      node.properties.outputContainersJson = value;
+      this.onNodeUpdate(node);
+    });
+  }
+
   private createPropertyCard(
     cardId: string,
     label: string, 

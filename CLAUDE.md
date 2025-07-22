@@ -1,9 +1,9 @@
 # 网页自动化编排系统 - 开发指南
 
 ## 🎯 项目概述
-这是一个自适应的网页自动化系统，包含两个核心部分：
-1. **后端大脑** - 负责流程控制、数据管理和大模型交互
-2. **前端浏览器** - 通过插件访问网页并与后端通信交互
+这是一个自适应的网页自动化系统，采用**前端定义流程，后端执行**的架构模式：
+1. **前端编排器** - 可视化节点编辑器，定义工作流和浏览器操作序列
+2. **后端执行器** - 负责浏览器控制、流程执行、数据管理和结果传递
 
 ## 🏗️ 架构原则
 ### 原子化设计
@@ -37,11 +37,22 @@ project/
 - **自动化库**: **Playwright**，用于驱动浏览器执行操作。
 - **虚拟环境**: 所有Python依赖（包括Playwright）都必须安装在项目根目录的`./venv`虚拟环境中。
 
-### 代码结构
-- **每个文件最多500行代码** - 超过时立即重构拆分
+### 细菌式编程规范 (500行限制)
+- **🚨 硬性限制**: 每个文件最多500行代码 - 违反则立即重构拆分
+- **原子化模块**: 每个模块只负责一个清晰的功能职责
+- **自包含设计**: 最小化外部依赖，模块间低耦合
+- **可移植性**: 代码应该易于提取和重用
 - **按功能职责组织模块** - 单一职责原则
 - **使用清晰的导入语句** - 优先使用相对导入
 - **所有函数必须有类型注解** - TypeScript和Python都要求
+
+### 文件拆分策略
+当文件接近或超过500行时，按以下原则拆分：
+1. **功能分离**: 不同功能拆分到独立文件
+2. **层级分离**: UI层、业务逻辑层、数据层分离
+3. **工具提取**: 通用工具函数提取到utils
+4. **类型定义**: 复杂类型定义提取到types文件
+5. **常量配置**: 配置和常量提取到config文件
 
 ### Python后端规范
 ```python
@@ -152,11 +163,13 @@ interface BrowserHandle {
 - **REST API控制** - 支持外部系统集成
 
 ## 🚫 禁止事项
-- **不要创建超过500行的文件**
+- **🚨 不要创建超过500行的文件** - 发现即重构
 - **不要在没有类型注解的情况下编写函数**
 - **不要忽略错误处理**
 - **不要创建紧耦合的模块**
 - **不要在没有测试的情况下提交代码**
+- **不要创建巨型类或函数** - 保持函数小而专一
+- **不要在单个文件中混合多个职责** - 严格遵循单一职责原则
 
 ## 💡 开发提示
 - **优先考虑用户体验** - 界面要直观易用
@@ -164,9 +177,271 @@ interface BrowserHandle {
 - **文档和代码同步更新** - 修改功能时同步更新文档
 - **性能优先** - 考虑大量元素和复杂工作流的性能
 
+## 🌐 浏览器工作流系统架构
+
+本系统采用**以浏览器为中心的工作流架构**，前端定义流程，后端执行操作。
+
+### 🖥️ Worker（浏览器工作器）概念
+
+#### Worker定义
+每个**浏览器实例就是一个Worker**，是独立的执行环境：
+- **一个Worker = 一个浏览器进程**
+- **Worker具有全局作用域** - 整个工作流都可以访问同一个Worker
+- **Worker包含初始化配置** - headless模式、viewport、cookie等属性
+- **Worker可以管理多个Page** - 同一浏览器中的不同标签页
+
+#### Worker初始化节点
+每个工作流必须包含一个**Worker初始化节点**，用于配置：
+
+```typescript
+interface WorkerConfig {
+  // 浏览器基础配置
+  headless: boolean;           // 无头模式
+  viewport: {                  // 视口大小
+    width: number;
+    height: number;
+  };
+  userAgent: string;          // 用户代理
+  
+  // 会话配置
+  cookies: Cookie[];          // 预设Cookie
+  localStorage: Record<string, string>; // 本地存储
+  sessionStorage: Record<string, string>; // 会话存储
+  
+  // 目标网页
+  initialUrl: string;         // 初始访问页面
+  
+  // 性能配置
+  timeout: number;            // 默认超时时间
+  waitForLoadState: 'load' | 'domcontentloaded' | 'networkidle';
+}
+```
+
+#### Worker全局变量
+Worker初始化后，以下变量成为**全局变量**，整个流水线都可以访问：
+- `browserHandle` - 浏览器句柄
+- `context` - 浏览器上下文
+- `currentPage` - 当前活动页面
+- `pages` - 页面管理器
+- `workerConfig` - Worker配置
+- `globalStorage` - Worker级别的数据存储
+
+### 📄 Page（页面）管理
+
+#### Page概念
+- **一个Worker可以包含多个Page**（类似浏览器的多标签页）
+- **每个Page都有独立的DOM环境**
+- **Page之间可以传递数据**
+- **Action操作必须绑定到具体的Page**
+
+#### Page操作
+```typescript
+interface PageOperation {
+  workerId: string;    // 绑定的Worker ID
+  pageId: string;      // 目标Page ID
+  operation: Operation; // 具体操作
+}
+```
+
+### ⚡ Action节点架构
+
+#### 执行序列设计
+每个Action节点可以包含**一个或多个执行序列**：
+
+```typescript
+interface ActionNode {
+  workerId: string;              // 绑定的Worker
+  pageId: string;               // 绑定的Page
+  sequences: ExecutionSequence[]; // 执行序列列表
+  outputContainers: OutputContainer[]; // 输出容器
+}
+
+interface ExecutionSequence {
+  id: string;
+  name: string;
+  steps: ActionStep[];          // 操作步骤
+  condition?: string;           // 执行条件
+  loop?: LoopConfig;           // 循环配置
+}
+
+interface ActionStep {
+  type: 'select' | 'operation' | 'wait' | 'extract';
+  selector?: ElementSelector;   // 元素选择器
+  operation?: Operation;        // 具体操作
+  waitConfig?: WaitConfig;     // 等待配置
+  extractConfig?: ExtractConfig; // 提取配置
+}
+```
+
+#### 基本操作序列
+```typescript
+// 基本等待操作
+interface WaitStep {
+  type: 'wait';
+  waitType: 'time' | 'element' | 'network' | 'custom';
+  duration?: number;           // 等待时间(ms)
+  selector?: string;          // 等待元素出现
+  condition?: string;         // 自定义条件
+}
+
+// 元素选择操作
+interface SelectStep {
+  type: 'select';
+  selector: {
+    css?: string;
+    xpath?: string;
+    text?: string;
+    attributes?: Record<string, string>;
+  };
+  multiple?: boolean;         // 是否选择多个元素
+}
+
+// 基础操作
+interface OperationStep {
+  type: 'operation';
+  operation: {
+    action: 'click' | 'input' | 'hover' | 'scroll' | 'extract';
+    target: ElementSelector;
+    parameters?: {
+      text?: string;          // 输入文本
+      offset?: {x: number, y: number}; // 点击偏移
+      scrollBy?: {x: number, y: number}; // 滚动距离
+    };
+  };
+}
+```
+
+#### 数据提取与输出容器
+Action节点如果执行内容提取，需要配置**输出容器**：
+
+```typescript
+interface OutputContainer {
+  id: string;
+  name: string;                // 变量名称
+  type: 'text' | 'html' | 'attribute' | 'image' | 'link' | 'json';
+  selector: ElementSelector;   // 提取源选择器
+  transform?: DataTransform;   // 数据转换规则
+  storage: 'node' | 'global' | 'worker'; // 存储作用域
+}
+
+interface DataTransform {
+  regex?: string;              // 正则提取
+  replace?: {from: string, to: string}[]; // 文本替换
+  format?: 'url' | 'number' | 'date' | 'json'; // 格式化
+  validator?: string;          // 数据验证规则
+}
+```
+
+### 🔄 数据传递机制
+
+#### 前后端数据流
+数据在前后端之间以以下格式传递：
+
+```typescript
+interface DataPayload {
+  type: 'variable' | 'data' | 'image' | 'link' | 'file';
+  content: any;                // 数据内容
+  metadata: {
+    source: string;            // 数据来源
+    timestamp: string;         // 时间戳
+    format: string;           // 数据格式
+    size?: number;            // 数据大小
+  };
+}
+
+// 变量传递
+interface VariablePayload extends DataPayload {
+  type: 'variable';
+  content: {
+    name: string;
+    value: any;
+    dataType: string;
+  };
+}
+
+// 图片传递
+interface ImagePayload extends DataPayload {
+  type: 'image';
+  content: {
+    base64: string;           // Base64编码图片
+    url?: string;            // 图片URL
+    alt?: string;           // 替代文本
+  };
+}
+
+// 链接传递
+interface LinkPayload extends DataPayload {
+  type: 'link';
+  content: {
+    href: string;
+    text: string;
+    target?: string;
+  };
+}
+```
+
+### 🎯 执行流程
+
+#### 工作流执行顺序
+1. **Worker初始化** - 创建浏览器实例，配置基础参数
+2. **Page创建** - 根据需要创建页面，导航到目标URL
+3. **节点执行** - 按DAG顺序执行Action节点
+4. **数据收集** - 提取的数据存储在输出容器中
+5. **结果传递** - 通过WebSocket将结果传回前端
+6. **资源清理** - 执行完成后清理浏览器资源
+
+#### Worker与Page的绑定关系
+```typescript
+// 操作绑定示例
+const actionConfig = {
+  workerId: "worker_001",      // 必须绑定到特定Worker
+  pageId: "page_main",         // 必须绑定到特定Page
+  sequences: [
+    {
+      steps: [
+        {type: 'select', selector: {css: '.login-btn'}},
+        {type: 'operation', operation: {action: 'click'}},
+        {type: 'wait', waitType: 'time', duration: 2000},
+        {type: 'extract', extractConfig: {target: '.result'}}
+      ]
+    }
+  ]
+};
+```
+
+### 📋 关键概念总结
+
+#### 🎯 核心理念
+- **前端定义流程，后端执行** - 前端编排界面设计工作流，后端负责浏览器控制和执行
+- **以浏览器为中心** - 整个系统围绕浏览器Worker的生命周期设计
+- **全局变量共享** - Worker初始化后，浏览器句柄等关键变量全局可访问
+
+#### 🏗️ 三层架构
+1. **Worker层** - 浏览器进程管理，配置初始化，资源清理
+2. **Page层** - 页面管理，DOM操作，页面间数据传递
+3. **Action层** - 具体操作执行，数据提取，结果输出
+
+#### 🔗 绑定关系
+- **每个Action必须绑定Worker和Page**
+- **同一Worker内的所有操作共享浏览器上下文**
+- **不同Page间可以独立操作，也可以数据交互**
+
+#### 📊 数据流向
+```
+前端节点编辑器 → 工作流JSON → 后端执行引擎 → 浏览器Worker → 页面操作 → 数据提取 → 结果回传 → 前端显示
+```
+
+#### 🔧 扩展机制
+- **输出容器** - 灵活的数据提取和转换
+- **执行序列** - 支持复杂的操作组合
+- **条件执行** - 基于运行时状态的动态流程
+- **多媒体支持** - 文本、图片、链接、文件等多种数据类型
+
+这套架构确保了系统的**可扩展性**、**可维护性**和**性能优化**。
+
 ## 核心架构：数据流与执行模型
 
-本系统采用基于有向无环图 (DAG) 的数据流架构，设计思想类似于 ComfyUI 等现代节点式编辑器。
+本系统在浏览器工作流基础上，采用基于有向无环图 (DAG) 的数据流架构。
 
 ### 1. 数据流转机制
 - **核心载体**: 数据以 `WorkflowData` 对象的形式在节点间流转。此对象包含 `payload` (业务数据) 和 `errors` (错误信息)。

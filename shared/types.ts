@@ -278,6 +278,22 @@ export interface CookieStore {
 }
 
 // ============================================================================
+// 通信相关类型 (Communication Types)
+// ============================================================================
+export interface Message {
+  type: string;
+  payload?: any;
+}
+
+export interface AddNodeMessage extends Message {
+  type: 'ADD_NODE';
+  payload: {
+    operation: Operation;
+    selector: ElementData; // Using ElementData which contains selectors
+  };
+}
+
+// ============================================================================
 // 错误处理相关类型 (Error Handling Types)
 // ============================================================================
 

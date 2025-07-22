@@ -289,6 +289,16 @@ export class Sidebar {
       case 'JsonFilter':
         this.propertyRenderers.renderJsonFilterProperties(node);
         break;
+      // 浏览器工作流节点
+      case 'WorkerInitialization':
+        this.propertyRenderers.renderWorkerInitializationProperties(node);
+        break;
+      case 'PageManagement':
+        this.propertyRenderers.renderPageManagementProperties(node);
+        break;
+      case 'ActionV2':
+        this.propertyRenderers.renderActionV2Properties(node);
+        break;
       default:
         content.innerHTML = `
           <div style="text-align: center; color: #888; font-style: italic; padding: 20px;">

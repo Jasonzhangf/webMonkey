@@ -39,6 +39,7 @@ black==23.11.0
 isort==5.12.0
 mypy==1.7.1
 
+playwright==1.40.0
 # Browser Automation (for Camoufox integration)
 selenium==4.15.2
 webdriver-manager==4.0.1

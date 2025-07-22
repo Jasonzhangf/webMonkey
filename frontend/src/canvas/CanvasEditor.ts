@@ -90,7 +90,11 @@ export class CanvasEditor {
     this.communicationManager.connect();
     this.communicationManager.onMessage.addListener(this.handleBackendMessage.bind(this));
 
-    this.addInitialNodes();
+    // 异步初始化节点
+    this.addInitialNodes().catch(error => {
+      console.error('Failed to initialize nodes:', error);
+    });
+    
     this.startAnimationLoop();
   }
 
@@ -136,7 +140,10 @@ export class CanvasEditor {
     this.renderer.render(
       this.nodes, 
       this.connections, 
-      this.interactions.getInteractionState()
+      this.interactions.getInteractionState(),
+      this.interactions.getZoomLevel(),
+      this.interactions.getPanX(),
+      this.interactions.getPanY()
     );
   }
 
@@ -160,7 +167,7 @@ export class CanvasEditor {
     return null;
   }
 
-  private addInitialNodes(): void {
+  private async addInitialNodes(): Promise<void> {
     const currentState = editorState.getState();
     
     // 如果已经有节点了，只确保有Start和End节点
@@ -171,7 +178,14 @@ export class CanvasEditor {
 
     console.log('Creating default test workflow...');
     // 创建默认测试工作流
-    this.workflowBuilder.createDefaultTestWorkflow();
+    try {
+      await this.workflowBuilder.createDefaultTestWorkflow();
+      console.log('✅ Default workflow creation completed successfully');
+    } catch (error) {
+      console.error('❌ Failed to create default workflow:', error);
+      // 如果失败，创建基本的Start和End节点
+      this.ensureStartEndNodes();
+    }
   }
 
   private ensureStartEndNodes(): void {

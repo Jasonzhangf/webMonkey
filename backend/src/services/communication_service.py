@@ -11,6 +11,7 @@ import websockets
 from websockets.server import WebSocketServerProtocol
 
 from ..utils.config import WebSocketSettings
+from .cookie_service import CookieService
 
 logger = logging.getLogger(__name__)
 
@@ -18,13 +19,20 @@ logger = logging.getLogger(__name__)
 class CommunicationService:
     """WebSocket communication service for handling plugin-orchestrator communication"""
     
-    def __init__(self, config: WebSocketSettings):
+    def __init__(self, config: WebSocketSettings, workflow_service):
         self.config = config
         self.server = None
         self.connections: Dict[str, WebSocketServerProtocol] = {}
         self.node_connections: Dict[str, str] = {}  # node_id -> connection_id
         self.message_handlers: Dict[str, Callable] = {}
         self.running = False
+        self.workflow_service = workflow_service
+        self.cookie_service = CookieService()
+        
+        # Register message handlers
+        self.register_message_handler('EXECUTE_WORKFLOW', self.handle_execute_workflow)
+        self.register_message_handler('COOKIE_SAVE', self.handle_cookie_save)
+        self.register_message_handler('COOKIE_LOAD', self.handle_cookie_load)
     
     async def start(self) -> None:
         """Start the WebSocket server"""
@@ -182,3 +190,86 @@ class CommunicationService:
     def get_node_connections(self) -> Dict[str, str]:
         """Get node to connection mapping"""
         return self.node_connections.copy()
+
+    async def handle_execute_workflow(self, connection_id: str, message: Dict[str, Any]):
+        """Handle the EXECUTE_WORKFLOW message."""
+        logger.info(f"Received EXECUTE_WORKFLOW from {connection_id}")
+        workflow_data = message.get('payload')
+        if not workflow_data:
+            logger.error("EXECUTE_WORKFLOW message received without payload.")
+            await self.send_message(connection_id, {
+                'type': 'ERROR',
+                'payload': {'message': 'EXECUTE_WORKFLOW message received without payload.'}
+            })
+            return
+
+        try:
+            execution_id = await self.workflow_service.execute_workflow(workflow_data)
+            logger.info(f"Workflow execution started with ID: {execution_id}")
+            await self.send_message(connection_id, {
+                'type': 'WORKFLOW_EXECUTION_STARTED',
+                'payload': {'status': 'success', 'execution_id': execution_id}
+            })
+        except Exception as e:
+            logger.error(f"Error during workflow execution: {e}", exc_info=True)
+            await self.send_message(connection_id, {
+                'type': 'WORKFLOW_EXECUTION_FAILED',
+                'payload': {'status': 'error', 'message': str(e)}
+            })
+
+    async def handle_cookie_save(self, connection_id: str, message: Dict[str, Any]):
+        """处理Cookie保存请求"""
+        logger.info(f"Received COOKIE_SAVE from {connection_id}")
+        
+        try:
+            cookies_data = message.get('data')
+            if not cookies_data:
+                raise ValueError("No cookie data provided")
+            
+            result = await self.cookie_service.save_cookies(cookies_data)
+            
+            await self.send_message(connection_id, {
+                'type': 'COOKIE_SAVE_RESPONSE',
+                'success': result['success'],
+                'data': result if result['success'] else None,
+                'error': result.get('error') if not result['success'] else None,
+                'timestamp': message.get('timestamp')
+            })
+            
+        except Exception as e:
+            logger.error(f"Error handling COOKIE_SAVE: {e}")
+            await self.send_message(connection_id, {
+                'type': 'COOKIE_SAVE_RESPONSE',
+                'success': False,
+                'error': str(e),
+                'timestamp': message.get('timestamp')
+            })
+
+    async def handle_cookie_load(self, connection_id: str, message: Dict[str, Any]):
+        """处理Cookie加载请求"""
+        logger.info(f"Received COOKIE_LOAD from {connection_id}")
+        
+        try:
+            request_data = message.get('data')
+            if not request_data or 'domain' not in request_data:
+                raise ValueError("Domain not provided")
+            
+            domain = request_data['domain']
+            result = await self.cookie_service.load_cookies(domain)
+            
+            await self.send_message(connection_id, {
+                'type': 'COOKIE_LOAD_RESPONSE',
+                'success': result['success'],
+                'data': result.get('data') if result['success'] else None,
+                'error': result.get('error') if not result['success'] else None,
+                'timestamp': message.get('timestamp')
+            })
+            
+        except Exception as e:
+            logger.error(f"Error handling COOKIE_LOAD: {e}")
+            await self.send_message(connection_id, {
+                'type': 'COOKIE_LOAD_RESPONSE',
+                'success': False,
+                'error': str(e),
+                'timestamp': message.get('timestamp')
+            })

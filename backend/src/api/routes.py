@@ -10,6 +10,7 @@ from ..models.workflow import WorkflowCreate, WorkflowResponse, WorkflowUpdate
 from ..models.task import TaskCreate, TaskResponse
 from ..services.workflow_service import WorkflowService
 from ..services.task_service import TaskService
+from ..services.cookie_service import CookieService
 
 router = APIRouter()
 
@@ -19,6 +20,9 @@ def get_workflow_service() -> WorkflowService:
 
 def get_task_service() -> TaskService:
     return TaskService()
+
+def get_cookie_service() -> CookieService:
+    return CookieService()
 
 # ============================================================================
 # Workflow Management Routes
@@ -227,3 +231,77 @@ async def get_system_status() -> dict:
 async def health_check() -> dict:
     """Health check endpoint"""
     return {"status": "healthy"}
+
+
+# ============================================================================
+# Cookie Management Routes
+# ============================================================================
+
+@router.post("/cookies/save")
+async def save_cookies(
+    cookies_data: dict,
+    service: CookieService = Depends(get_cookie_service)
+) -> dict:
+    """保存Cookie到数据库"""
+    try:
+        result = await service.save_cookies(cookies_data)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/cookies/load")
+async def load_cookies(
+    domain: str,
+    service: CookieService = Depends(get_cookie_service)
+) -> dict:
+    """从数据库加载Cookie"""
+    try:
+        result = await service.load_cookies(domain)
+        if not result['success']:
+            raise HTTPException(status_code=404, detail=result['error'])
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/cookies/domains")
+async def get_cookie_domains(
+    service: CookieService = Depends(get_cookie_service)
+) -> dict:
+    """获取所有存储的域名列表"""
+    try:
+        return await service.get_domains()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/cookies/{domain}")
+async def delete_cookies(
+    domain: str,
+    service: CookieService = Depends(get_cookie_service)
+) -> dict:
+    """删除指定域名的Cookie"""
+    try:
+        result = await service.delete_cookies(domain)
+        if not result['success']:
+            raise HTTPException(status_code=404, detail=result['error'])
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/cookies/cleanup")
+async def cleanup_expired_cookies(
+    days: int = 30,
+    service: CookieService = Depends(get_cookie_service)
+) -> dict:
+    """清理过期的Cookie记录"""
+    try:
+        return await service.cleanup_expired_cookies(days)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

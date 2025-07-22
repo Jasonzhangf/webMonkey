@@ -8,6 +8,10 @@ export interface FloatingMenuOptions {
   onToggleCapture: () => void;
   onOpenSettings: () => void;
   onHelp: () => void;
+  onSaveToFile: () => void;
+  onSendToEditor: () => void;
+  onSaveCookies: () => void;
+  onLoadCookies: () => void;
 }
 
 export class FloatingMenu {
@@ -15,12 +19,37 @@ export class FloatingMenu {
   private options: FloatingMenuOptions;
   private isDragging: boolean = false;
   private dragOffset: { x: number, y: number } = { x: 0, y: 0 };
-  private isCollapsed: boolean = false;
+  private isVisible: boolean = false; // 默认不显示
 
   constructor(options: FloatingMenuOptions) {
     console.log('FloatingMenu constructor called', options);
     this.options = options;
-    this.render();
+    // 默认不渲染菜单，需要手动调用show()
+  }
+
+  // 显示菜单
+  public show(): void {
+    if (!this.isVisible) {
+      this.isVisible = true;
+      this.render();
+    }
+  }
+
+  // 隐藏菜单
+  public hide(): void {
+    if (this.isVisible) {
+      this.isVisible = false;
+      this.removeMenu();
+    }
+  }
+
+  // 切换菜单显示状态
+  public toggle(): void {
+    if (this.isVisible) {
+      this.hide();
+    } else {
+      this.show();
+    }
   }
 
   public update(options: Partial<FloatingMenuOptions>): void {
@@ -69,40 +98,11 @@ export class FloatingMenu {
     title.style.fontSize = '14px';
     handle.appendChild(title);
     
-    // 添加控制按钮组
-    const controls = document.createElement('div');
-    controls.style.display = 'flex';
-    controls.style.gap = '5px';
-    handle.appendChild(controls);
-    
-    // 添加折叠/展开按钮
-    const collapseBtn = document.createElement('button');
-    collapseBtn.innerHTML = '&#8722;'; // 减号符号
-    collapseBtn.className = 'wao-menu-control-button';
-    collapseBtn.title = '折叠菜单';
-    collapseBtn.style.width = '20px';
-    collapseBtn.style.height = '20px';
-    collapseBtn.style.padding = '0';
-    collapseBtn.style.background = '#f0f0f0';
-    collapseBtn.style.border = 'none';
-    collapseBtn.style.borderRadius = '4px';
-    collapseBtn.style.cursor = 'pointer';
-    collapseBtn.style.display = 'flex';
-    collapseBtn.style.justifyContent = 'center';
-    collapseBtn.style.alignItems = 'center';
-    collapseBtn.style.fontSize = '14px';
-    collapseBtn.style.lineHeight = '1';
-    collapseBtn.onclick = (e) => {
-      e.stopPropagation();
-      this.removeMenu();
-    };
-    controls.appendChild(collapseBtn);
-    
     // 添加关闭按钮
     const closeBtn = document.createElement('button');
     closeBtn.innerHTML = '&#10005;'; // X符号
     closeBtn.className = 'wao-menu-control-button';
-    closeBtn.title = '隐藏菜单';
+    closeBtn.title = '关闭菜单';
     closeBtn.style.width = '20px';
     closeBtn.style.height = '20px';
     closeBtn.style.padding = '0';
@@ -117,9 +117,9 @@ export class FloatingMenu {
     closeBtn.style.lineHeight = '1';
     closeBtn.onclick = (e) => {
       e.stopPropagation();
-      this.removeMenu();
+      this.hide(); // 使用新的hide方法
     };
-    controls.appendChild(closeBtn);
+    handle.appendChild(closeBtn);
     
     // 添加内容容器
     const content = document.createElement('div');
@@ -157,41 +157,85 @@ export class FloatingMenu {
     };
     content.appendChild(captureBtn);
     
+    // 添加保存到本地按钮
+    const saveBtn = document.createElement('button');
+    saveBtn.textContent = '保存到本地';
+    saveBtn.className = 'wao-menu-button';
+    saveBtn.style.background = '#FF9800';
+    saveBtn.onclick = (e) => {
+      e.stopPropagation();
+      this.options.onSaveToFile();
+    };
+    content.appendChild(saveBtn);
+
+    // 添加发送到编辑器按钮
+    const sendBtn = document.createElement('button');
+    sendBtn.textContent = '发送到编辑器';
+    sendBtn.className = 'wao-menu-button';
+    sendBtn.style.background = '#00BCD4';
+    this.addButtonStyles(sendBtn);
+    sendBtn.onclick = (e) => {
+      e.stopPropagation();
+      this.options.onSendToEditor();
+    };
+    content.appendChild(sendBtn);
+
+    // 添加Cookie管理按钮区域
+    const cookieSection = document.createElement('div');
+    cookieSection.style.borderTop = '1px solid #eee';
+    cookieSection.style.paddingTop = '8px';
+    cookieSection.style.marginTop = '8px';
+    content.appendChild(cookieSection);
+
+    // 添加Cookie标题
+    const cookieTitle = document.createElement('div');
+    cookieTitle.textContent = '🍪 Cookie 管理';
+    cookieTitle.style.fontSize = '12px';
+    cookieTitle.style.fontWeight = 'bold';
+    cookieTitle.style.color = '#666';
+    cookieTitle.style.marginBottom = '8px';
+    cookieTitle.style.textAlign = 'center';
+    cookieSection.appendChild(cookieTitle);
+
+    // 添加Cookie按钮容器
+    const cookieButtons = document.createElement('div');
+    cookieButtons.style.display = 'grid';
+    cookieButtons.style.gridTemplateColumns = '1fr 1fr';
+    cookieButtons.style.gap = '8px';
+    cookieSection.appendChild(cookieButtons);
+
+    // 保存Cookie按钮
+    const saveCookieBtn = document.createElement('button');
+    saveCookieBtn.textContent = '保存';
+    saveCookieBtn.className = 'wao-menu-button';
+    saveCookieBtn.style.background = '#4CAF50';
+    saveCookieBtn.style.fontSize = '12px';
+    this.addButtonStyles(saveCookieBtn);
+    saveCookieBtn.onclick = (e) => {
+      e.stopPropagation();
+      this.options.onSaveCookies();
+    };
+    cookieButtons.appendChild(saveCookieBtn);
+
+    // 加载Cookie按钮
+    const loadCookieBtn = document.createElement('button');
+    loadCookieBtn.textContent = '加载';
+    loadCookieBtn.className = 'wao-menu-button';
+    loadCookieBtn.style.background = '#FF9800';
+    loadCookieBtn.style.fontSize = '12px';
+    this.addButtonStyles(loadCookieBtn);
+    loadCookieBtn.onclick = (e) => {
+      e.stopPropagation();
+      this.options.onLoadCookies();
+    };
+    cookieButtons.appendChild(loadCookieBtn);
+
     // 添加设置按钮
     const settingsBtn = document.createElement('button');
     settingsBtn.textContent = '设置';
     settingsBtn.className = 'wao-menu-button';
-    settingsBtn.style.padding = '8px 12px';
     settingsBtn.style.background = '#2196F3';
-    settingsBtn.style.color = 'white';
-    settingsBtn.style.border = 'none';
-    settingsBtn.style.borderRadius = '4px';
-    settingsBtn.style.cursor = 'pointer';
-    settingsBtn.style.width = '100%';
-    settingsBtn.style.transition = 'background 0.2s ease';
-    settingsBtn.onclick = (e) => {
-      e.stopPropagation();
-      this.options.onOpenSettings();
-    };
-    content.appendChild(settingsBtn);
-    
-    // 添加帮助按钮
-    const helpBtn = document.createElement('button');
-    helpBtn.textContent = '帮助';
-    helpBtn.className = 'wao-menu-button';
-    helpBtn.style.padding = '8px 12px';
-    helpBtn.style.background = '#9E9E9E';
-    helpBtn.style.color = 'white';
-    helpBtn.style.border = 'none';
-    helpBtn.style.borderRadius = '4px';
-    helpBtn.style.cursor = 'pointer';
-    helpBtn.style.width = '100%';
-    helpBtn.style.transition = 'background 0.2s ease';
-    helpBtn.onclick = (e) => {
-      e.stopPropagation();
-      this.options.onHelp();
-    };
-    content.appendChild(helpBtn);
+    this.addButtonStyles(settingsBtn);
     
     // 添加拖动功能
     handle.addEventListener('mousedown', this.handleDragStart.bind(this));
@@ -201,11 +245,17 @@ export class FloatingMenu {
     // 添加到页面
     document.body.appendChild(menu);
     this.menuElement = menu;
-    
-    // 应用折叠状态
-    if (this.isCollapsed) {
-      this.applyCollapsedState();
-    }
+  }
+
+  private addButtonStyles(button: HTMLElement): void {
+    button.style.padding = '8px 12px';
+    button.style.color = 'white';
+    button.style.border = 'none';
+    button.style.borderRadius = '4px';
+    button.style.cursor = 'pointer';
+    button.style.width = '100%';
+    button.style.transition = 'background 0.2s ease';
+    button.style.fontWeight = 'bold';
   }
   
   private updateMenuState(): void {
@@ -224,49 +274,6 @@ export class FloatingMenu {
     }
   }
   
-  private toggleCollapse(): void {
-    this.isCollapsed = !this.isCollapsed;
-    
-    if (this.isCollapsed) {
-      this.applyCollapsedState();
-    } else {
-      this.applyExpandedState();
-    }
-  }
-  
-  private applyCollapsedState(): void {
-    if (!this.menuElement) return;
-    
-    const content = this.menuElement.querySelector('.wao-menu-content');
-    if (content) {
-      (content as HTMLElement).style.display = 'none';
-    }
-    
-    this.menuElement.style.width = '180px';
-    
-    const collapseBtn = this.menuElement.querySelector('.wao-menu-control-button');
-    if (collapseBtn) {
-      collapseBtn.innerHTML = '&#43;'; // 加号符号
-      (collapseBtn as HTMLElement).title = '展开菜单';
-    }
-  }
-  
-  private applyExpandedState(): void {
-    if (!this.menuElement) return;
-    
-    const content = this.menuElement.querySelector('.wao-menu-content');
-    if (content) {
-      (content as HTMLElement).style.display = 'flex';
-    }
-    
-    this.menuElement.style.width = '220px';
-    
-    const collapseBtn = this.menuElement.querySelector('.wao-menu-control-button');
-    if (collapseBtn) {
-      collapseBtn.innerHTML = '&#8722;'; // 减号符号
-      (collapseBtn as HTMLElement).title = '折叠菜单';
-    }
-  }
   
   private handleDragStart(e: MouseEvent): void {
     if (!this.menuElement) return;
@@ -314,7 +321,7 @@ export class FloatingMenu {
     document.removeEventListener('mouseup', this.handleDragEnd.bind(this));
   }
   
-  public isVisible(): boolean {
-    return this.menuElement !== null;
+  public getVisibility(): boolean {
+    return this.isVisible;
   }
 }

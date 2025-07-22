@@ -17,7 +17,7 @@ export class WorkflowBuilder {
     this.addNodeCallback = addNodeCallback;
   }
 
-  public createDefaultTestWorkflow(): void {
+  public async createDefaultTestWorkflow(): Promise<void> {
     console.log('Creating default test workflow...');
     
     // 节点位置配置 - 初始位置，稍后会自动排版
@@ -47,10 +47,59 @@ export class WorkflowBuilder {
       createdNodes[key] ? `${key}: ✅` : `${key}: ❌`
     ));
 
-    // 等待节点创建完成，然后创建连接
-    setTimeout(() => {
-      this.createDefaultConnections();
-    }, 100);
+    // 等待所有节点完全初始化
+    await this.waitForNodesReady(createdNodes);
+    
+    // 创建连接
+    this.createDefaultConnections();
+  }
+
+  private async waitForNodesReady(nodeRefs: any): Promise<void> {
+    return new Promise((resolve) => {
+      let attempts = 0;
+      const maxAttempts = 40; // 最多等待2秒 (40 * 50ms)
+      
+      const checkReady = () => {
+        attempts++;
+        const currentState = editorState.getState();
+        
+        console.log(`Node readiness check attempt ${attempts}/${maxAttempts}`);
+        console.log(`Current nodes in state: ${currentState.nodes.length}`);
+        
+        const allNodesReady = Object.values(nodeRefs).every(node => {
+          if (!node) return false;
+          
+          const stateNode = currentState.nodes.find(n => n.id === node.id);
+          if (!stateNode) {
+            console.log(`Node ${node.title} not found in state`);
+            return false;
+          }
+          
+          // 检查端口是否已正确初始化
+          const inputsReady = stateNode.inputs.every(port => port.nodeId === node.id);
+          const outputsReady = stateNode.outputs.every(port => port.nodeId === node.id);
+          
+          if (!inputsReady || !outputsReady) {
+            console.log(`Node ${node.title} ports not ready: inputs=${inputsReady}, outputs=${outputsReady}`);
+            return false;
+          }
+          
+          return true;
+        });
+        
+        if (allNodesReady) {
+          console.log('✅ All nodes are ready for connection creation');
+          resolve();
+        } else if (attempts >= maxAttempts) {
+          console.warn('⚠️ Timeout waiting for nodes to be ready, proceeding anyway');
+          resolve();
+        } else {
+          setTimeout(checkReady, 50);
+        }
+      };
+      
+      checkReady();
+    });
   }
 
   private createAllNodes(positions: any): any {
@@ -203,6 +252,21 @@ export class WorkflowBuilder {
     const currentState = editorState.getState();
     const nodes = currentState.nodes;
 
+    console.log('=== Connection Creation Debug ===');
+    console.log(`Total nodes in state: ${nodes.length}`);
+    
+    // 详细节点诊断
+    const diagnostics = {
+      startNodes: nodes.filter(n => n.type === 'Start').length,
+      contentGenNodes: nodes.filter(n => n.type === 'ContentGenerator').length,
+      displayNodes: nodes.filter(n => n.type === 'Display').length,
+      mergerNodes: nodes.filter(n => n.type === 'JsonMerger').length,
+      filterNodes: nodes.filter(n => n.type === 'JsonFilter').length,
+      endNodes: nodes.filter(n => n.type === 'End').length
+    };
+    
+    console.table(diagnostics);
+
     // 查找主要处理节点
     const startNode = nodes.find(n => n.type === 'Start');
     const contentGenNodes = nodes.filter(n => n.type === 'ContentGenerator');
@@ -218,6 +282,16 @@ export class WorkflowBuilder {
     const mergerDisplayNode = displayNodes.find(n => n.title === 'Merged Data');
     const filterDisplayNode = displayNodes.find(n => n.title === 'Filtered Data');
     const finalDisplayNode = displayNodes.find(n => n.title === 'Final Result');
+
+    // 检查Display节点的详细信息
+    console.log('=== Display Node Diagnostics ===');
+    displayNodes.forEach(node => {
+      console.log(`Display Node: ${node.title}`);
+      console.log(`  - ID: ${node.id}`);
+      console.log(`  - Position: (${node.position.x}, ${node.position.y})`);
+      console.log(`  - Inputs: ${node.inputs.length} (${node.inputs.map(p => `${p.id}:${p.nodeId === node.id ? '✅' : '❌'}`).join(', ')})`);
+      console.log(`  - Outputs: ${node.outputs.length} (${node.outputs.map(p => `${p.id}:${p.nodeId === node.id ? '✅' : '❌'}`).join(', ')})`);
+    });
 
     console.log('Found display nodes:', {
       startDisplay: !!startDisplayNode,
@@ -377,70 +451,97 @@ export class WorkflowBuilder {
       mergerDisplayNode, filterDisplayNode
     } = nodeRefs;
 
-    const startOutPort = startNode.outputs[0];
-    const userGenOutPort = userDataGen.outputs[0];
-    const productGenOutPort = productDataGen.outputs[0];
-    const mergerOutPort = mergerNode.outputs[0];
-    const filterOutPort = filterNode.outputs[0];
+    console.log('=== Data Monitoring Connections ===');
 
-    // Start -> Start Display
-    if (startOutPort && startDisplayNode) {
-      const startDisplayInPort = startDisplayNode.inputs[0];
-      if (startDisplayInPort) {
-        connections.push({
-          id: `conn_${connectionId++}`,
-          from: startOutPort,
-          to: startDisplayInPort
-        });
-      }
-    }
+    const monitoringPairs = [
+      { source: startNode, target: startDisplayNode, name: 'Start -> Start Display' },
+      { source: userDataGen, target: gen1DisplayNode, name: 'UserGen -> UserGen Display' },
+      { source: productDataGen, target: gen2DisplayNode, name: 'ProductGen -> ProductGen Display' },
+      { source: mergerNode, target: mergerDisplayNode, name: 'Merger -> Merger Display' },
+      { source: filterNode, target: filterDisplayNode, name: 'Filter -> Filter Display' }
+    ];
 
-    // User Data Generator -> User Generated Display
-    if (userGenOutPort && gen1DisplayNode) {
-      const gen1DisplayInPort = gen1DisplayNode.inputs[0];
-      if (gen1DisplayInPort) {
-        connections.push({
-          id: `conn_${connectionId++}`,
-          from: userGenOutPort,
-          to: gen1DisplayInPort
-        });
+    monitoringPairs.forEach(({ source, target, name }, index) => {
+      console.log(`\n--- Creating ${name} ---`);
+      
+      if (this.validateNodeConnection(source, target)) {
+        const connection = this.createSafeConnection(
+          source.outputs[0], 
+          target.inputs[0], 
+          connectionId + index
+        );
+        if (connection) {
+          connections.push(connection);
+          console.log(`✅ Created monitoring connection: ${source.title} -> ${target.title}`);
+        } else {
+          console.error(`❌ Failed to create safe connection: ${source.title} -> ${target.title}`);
+        }
+      } else {
+        console.error(`❌ Node validation failed: ${source?.title || 'undefined'} -> ${target?.title || 'undefined'}`);
       }
-    }
+    });
+  }
 
-    // Product Data Generator -> Product Generated Display
-    if (productGenOutPort && gen2DisplayNode) {
-      const gen2DisplayInPort = gen2DisplayNode.inputs[0];
-      if (gen2DisplayInPort) {
-        connections.push({
-          id: `conn_${connectionId++}`,
-          from: productGenOutPort,
-          to: gen2DisplayInPort
-        });
-      }
+  private validateNodeConnection(sourceNode: any, targetNode: any): boolean {
+    if (!sourceNode || !targetNode) {
+      console.warn('Source or target node is missing:', {
+        source: !!sourceNode,
+        target: !!targetNode
+      });
+      return false;
     }
+    
+    if (!sourceNode.outputs || sourceNode.outputs.length === 0) {
+      console.warn(`Source node ${sourceNode.title} has no outputs:`, sourceNode.outputs);
+      return false;
+    }
+    
+    if (!targetNode.inputs || targetNode.inputs.length === 0) {
+      console.warn(`Target node ${targetNode.title} has no inputs:`, targetNode.inputs);
+      return false;
+    }
+    
+    // 验证端口nodeId一致性
+    const sourcePort = sourceNode.outputs[0];
+    const targetPort = targetNode.inputs[0];
+    
+    if (!sourcePort || !targetPort) {
+      console.warn('Source or target port is missing:', {
+        sourcePort: !!sourcePort,
+        targetPort: !!targetPort
+      });
+      return false;
+    }
+    
+    if (sourcePort.nodeId !== sourceNode.id) {
+      console.warn(`Source port nodeId mismatch: ${sourcePort.nodeId} !== ${sourceNode.id}`);
+      return false;
+    }
+    
+    if (targetPort.nodeId !== targetNode.id) {
+      console.warn(`Target port nodeId mismatch: ${targetPort.nodeId} !== ${targetNode.id}`);
+      return false;
+    }
+    
+    console.log(`✅ Node connection validation passed: ${sourceNode.title} -> ${targetNode.title}`);
+    return true;
+  }
 
-    // JsonMerger -> Merged Data Display
-    if (mergerOutPort && mergerDisplayNode) {
-      const mergerDisplayInPort = mergerDisplayNode.inputs[0];
-      if (mergerDisplayInPort) {
-        connections.push({
-          id: `conn_${connectionId++}`,
-          from: mergerOutPort,
-          to: mergerDisplayInPort
-        });
-      }
+  private createSafeConnection(fromPort: any, toPort: any, id: number): Connection | null {
+    if (!fromPort || !toPort) {
+      console.warn('Cannot create connection - missing ports:', {
+        fromPort: !!fromPort,
+        toPort: !!toPort
+      });
+      return null;
     }
-
-    // JsonFilter -> Filtered Data Display
-    if (filterOutPort && filterDisplayNode) {
-      const filterDisplayInPort = filterDisplayNode.inputs[0];
-      if (filterDisplayInPort) {
-        connections.push({
-          id: `conn_${connectionId++}`,
-          from: filterOutPort,
-          to: filterDisplayInPort
-        });
-      }
-    }
+    
+    console.log(`Creating connection: ${fromPort.id} -> ${toPort.id}`);
+    
+    return {
+      id: `conn_${id}`,
+      from: fromPort,
+      to: toPort
+    };
   }
 }

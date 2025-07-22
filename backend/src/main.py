@@ -12,8 +12,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
 from .api.routes import router as api_router
-from .services.communication_service import CommunicationService
-from .services.state_manager import StateManager
+from ..services.communication_service import CommunicationService
+from ..services.state_manager import StateManager
+from ..services.workflow_service import WorkflowService
+from ..services.browser_service import BrowserService
 from .utils.config import get_settings
 
 # Configure logging
@@ -26,22 +28,26 @@ logger = logging.getLogger(__name__)
 # Global services
 communication_service: CommunicationService = None
 state_manager: StateManager = None
-
+workflow_service: WorkflowService = None
+browser_service: BrowserService = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager"""
-    global communication_service, state_manager
+    global communication_service, state_manager, workflow_service, browser_service
     
     logger.info("Starting Web Automation Orchestrator Backend...")
     
     # Initialize services
     settings = get_settings()
     state_manager = StateManager()
-    communication_service = CommunicationService(settings.websocket)
+    browser_service = BrowserService()
+    workflow_service = WorkflowService(browser_service)
+    communication_service = CommunicationService(settings.websocket, workflow_service)
     
     # Start services
     await state_manager.initialize()
+    await browser_service.start()
     await communication_service.start()
     
     logger.info("Backend services started successfully")
@@ -51,6 +57,7 @@ async def lifespan(app: FastAPI):
     # Cleanup
     logger.info("Shutting down backend services...")
     await communication_service.stop()
+    await browser_service.stop()
     await state_manager.cleanup()
     logger.info("Backend services shut down successfully")
 
@@ -103,7 +110,9 @@ async def health_check():
         "status": "healthy",
         "services": {
             "communication": communication_service.is_running() if communication_service else False,
-            "state_manager": state_manager.is_ready() if state_manager else False
+            "state_manager": state_manager.is_ready() if state_manager else False,
+            "workflow_service": workflow_service is not None,
+            "browser_service": browser_service.is_running() if browser_service else False
         }
     }
 

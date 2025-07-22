@@ -41,6 +41,12 @@ export abstract class BaseNode {
   public outputs: Port[] = [];
   public executionState: NodeExecutionState = 'idle';
   public variables: { [key: string]: any } = {}; // 节点变量存储
+  
+  // Worker/Page绑定支持 (浏览器工作流架构)
+  public workerId?: string; // 绑定的Worker ID
+  public pageId?: string; // 绑定的Page ID
+  public requiresWorkerBinding: boolean = false; // 是否需要Worker绑定
+  public requiresPageBinding: boolean = false; // 是否需要Page绑定
 
   public get position(): NodePosition {
     return this._position;
@@ -99,6 +105,47 @@ export abstract class BaseNode {
       }
     }
     return null;
+  }
+
+  // Worker/Page绑定相关方法
+  public bindToWorker(workerId: string): void {
+    this.workerId = workerId;
+  }
+
+  public bindToPage(pageId: string): void {
+    this.pageId = pageId;
+  }
+
+  public isWorkerBound(): boolean {
+    return this.workerId !== undefined;
+  }
+
+  public isPageBound(): boolean {
+    return this.pageId !== undefined;
+  }
+
+  public validateBindings(): { isValid: boolean; errors: string[] } {
+    const errors: string[] = [];
+
+    if (this.requiresWorkerBinding && !this.isWorkerBound()) {
+      errors.push(`${this.type}节点需要绑定到Worker`);
+    }
+
+    if (this.requiresPageBinding && !this.isPageBound()) {
+      errors.push(`${this.type}节点需要绑定到Page`);
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  }
+
+  public getBindingInfo(): { workerId?: string; pageId?: string } {
+    return {
+      workerId: this.workerId,
+      pageId: this.pageId
+    };
   }
 }
 
