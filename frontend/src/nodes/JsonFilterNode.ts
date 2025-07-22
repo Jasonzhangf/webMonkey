@@ -19,8 +19,8 @@ export class JsonFilterNode extends BaseNode {
     this.title = 'JSON Filter';
     
     // 添加输入和输出端口
-    this.inputs.push({ id: 'input', nodeId: this.id, position: { x: 0, y: 0 }, isInput: true });
-    this.outputs.push({ id: 'output', nodeId: this.id, position: { x: 0, y: 0 }, isInput: false });
+    this.inputs.push({ id: 'input', nodeId: this.id, position: { x: 0, y: 0 }, isInput: true, portNumber: 1 });
+    this.outputs.push({ id: 'output', nodeId: this.id, position: { x: 0, y: 0 }, isInput: false, portNumber: 1 });
     
     // 设置默认属性
     this.properties = {

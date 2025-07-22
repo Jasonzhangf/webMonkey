@@ -14,12 +14,12 @@ export class JsonMergerNode extends BaseNode {
     
     // 添加多个输入端口
     this.inputs.push(
-      { id: 'input1', nodeId: this.id, position: { x: 0, y: 0 }, isInput: true },
-      { id: 'input2', nodeId: this.id, position: { x: 0, y: 0 }, isInput: true }
+      { id: 'input1', nodeId: this.id, position: { x: 0, y: 0 }, isInput: true, portNumber: 1 },
+      { id: 'input2', nodeId: this.id, position: { x: 0, y: 0 }, isInput: true, portNumber: 2 }
     );
     
     // 添加输出端口
-    this.outputs.push({ id: 'output', nodeId: this.id, position: { x: 0, y: 0 }, isInput: false });
+    this.outputs.push({ id: 'output', nodeId: this.id, position: { x: 0, y: 0 }, isInput: false, portNumber: 1 });
     
     // 设置默认属性
     this.properties = {

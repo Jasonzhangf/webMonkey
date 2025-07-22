@@ -18,9 +18,11 @@ export class ContentGeneratorNode extends BaseNode {
     super(position, 'ContentGenerator');
     this.title = 'Content Generator';
     
-    // ContentGenerator可以独立工作，不需要输入端口
-    // 只添加输出端口
-    this.outputs.push({ id: 'output', nodeId: this.id, position: { x: 0, y: 0 }, isInput: false });
+    // 添加可选输入端口 - 可以接受上游数据进行扩展
+    this.inputs.push({ id: 'input', nodeId: this.id, position: { x: 0, y: 0 }, isInput: true, portNumber: 1 });
+    
+    // 添加输出端口
+    this.outputs.push({ id: 'output', nodeId: this.id, position: { x: 0, y: 0 }, isInput: false, portNumber: 1 });
     
     // 初始化模板
     this.initializeTemplates();
@@ -172,8 +174,8 @@ export class ContentGeneratorNode extends BaseNode {
     });
   }
 
-  public async execute(_input: any): Promise<{ [portId: string]: any }> {
-    console.log('ContentGeneratorNode executing...');
+  public async execute(input: any): Promise<{ [portId: string]: any }> {
+    console.log('ContentGeneratorNode executing with input:', input);
     
     const templateName = this.properties.templateName || 'user-profile';
     const template = this.templates.get(templateName);
@@ -184,22 +186,52 @@ export class ContentGeneratorNode extends BaseNode {
 
     let generatedData = template.generator();
 
-    // 添加时间戳（如果启用）
+    // 如果有输入数据，将其与生成的数据结合
+    let outputData = generatedData;
+    if (input && input.payload) {
+      const inputData = input.payload;
+      
+      // 根据合并策略结合输入和生成的数据
+      const mergeMode = this.properties.mergeMode || 'extend';
+      
+      if (mergeMode === 'extend') {
+        // 扩展模式：将生成的数据添加到输入数据中
+        outputData = {
+          ...inputData,
+          ...generatedData,
+          // 保留原始输入数据在专门的字段中
+          originalData: inputData
+        };
+      } else if (mergeMode === 'wrap') {
+        // 包装模式：将输入数据包装进生成的数据结构中
+        outputData = {
+          ...generatedData,
+          inputData: inputData
+        };
+      } else if (mergeMode === 'replace') {
+        // 替换模式：只使用生成的数据，忽略输入
+        outputData = generatedData;
+      }
+    }
+
+    // 添加时间戳和元数据（如果启用）
     if (this.properties.includeTimestamp) {
-      generatedData = {
-        ...generatedData,
+      outputData = {
+        ...outputData,
         generatedAt: new Date().toISOString(),
         generator: {
           node: 'ContentGenerator',
           template: templateName,
-          version: '1.0'
+          version: '1.0',
+          hasInput: !!(input && input.payload),
+          mergeMode: this.properties.mergeMode || 'extend'
         }
       };
     }
 
     return {
       'output': {
-        payload: generatedData,
+        payload: outputData,
         errors: []
       }
     };

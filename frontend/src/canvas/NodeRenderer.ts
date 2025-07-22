@@ -4,12 +4,22 @@ export class NodeRenderer {
   private readonly BORDER_RADIUS = 8;
   private readonly PORT_SIZE = 6;
   private readonly PORT_LABEL_OFFSET = 15;
+  private animationTime = 0; // 动画时间计数器
 
   public draw(ctx: CanvasRenderingContext2D, node: BaseNode, isSelected: boolean = false): void {
+    // 更新动画时间
+    this.animationTime += 0.05;
+    
     this.drawNodeBox(ctx, node, isSelected);
+    this.drawNodeNumber(ctx, node);
     this.drawNodeTitle(ctx, node);
     this.drawPorts(ctx, node);
     this.drawPortLabels(ctx, node);
+    
+    // 绘制运行动画效果
+    if (node.executionState === 'running') {
+      this.drawRunningAnimation(ctx, node);
+    }
     
     // 调用节点的自定义渲染方法（如果有的话）
     if (typeof (node as any).renderCustomContent === 'function') {
@@ -19,7 +29,11 @@ export class NodeRenderer {
 
   private getNodeColor(node: BaseNode): { bg: string, border: string, text: string } {
     const colors = {
-      running: { bg: '#4a4a4a', border: '#ffd700', text: '#ffffff' },
+      running: { 
+        bg: '#4a4a4a', 
+        border: `hsl(${(this.animationTime * 180) % 360}, 70%, 50%)`, // 彩虹色动画
+        text: '#ffffff' 
+      },
       completed: { bg: '#2d4a2d', border: '#4CAF50', text: '#ffffff' },
       failed: { bg: '#4a2d2d', border: '#f44336', text: '#ffffff' }
     };
@@ -106,6 +120,30 @@ export class NodeRenderer {
     ctx.fill();
   }
 
+  private drawNodeNumber(ctx: CanvasRenderingContext2D, node: BaseNode): void {
+    const colors = this.getNodeColor(node);
+    
+    // 绘制圆形背景
+    const numberX = node.position.x + 12;
+    const numberY = node.position.y + 12;
+    const radius = 10;
+    
+    ctx.fillStyle = colors.border;
+    ctx.beginPath();
+    ctx.arc(numberX, numberY, radius, 0, 2 * Math.PI);
+    ctx.fill();
+    
+    // 绘制节点编号
+    ctx.font = 'bold 11px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    // 使用节点ID的最后几位作为编号，或者使用节点索引
+    const nodeNumber = (node as any).nodeNumber || parseInt(node.id.slice(-2), 16) % 99 + 1;
+    ctx.fillText(nodeNumber.toString(), numberX, numberY);
+  }
+
   private drawNodeTitle(ctx: CanvasRenderingContext2D, node: BaseNode): void {
     const colors = this.getNodeColor(node);
     ctx.fillStyle = colors.text;
@@ -155,13 +193,96 @@ export class NodeRenderer {
     // Draw input labels (left side)
     node.inputs.forEach(port => {
       ctx.textAlign = 'left';
-      ctx.fillText(port.id, port.position.x + this.PORT_LABEL_OFFSET, port.position.y);
+      const portLabel = port.portNumber ? `${port.portNumber}.${port.id}` : port.id;
+      ctx.fillText(portLabel, port.position.x + this.PORT_LABEL_OFFSET, port.position.y);
     });
 
     // Draw output labels (right side)
     node.outputs.forEach(port => {
       ctx.textAlign = 'right';
-      ctx.fillText(port.id, port.position.x - this.PORT_LABEL_OFFSET, port.position.y);
+      const portLabel = port.portNumber ? `${port.portNumber}.${port.id}` : port.id;
+      ctx.fillText(portLabel, port.position.x - this.PORT_LABEL_OFFSET, port.position.y);
+    });
+  }
+
+  private drawRunningAnimation(ctx: CanvasRenderingContext2D, node: BaseNode): void {
+    const x = node.position.x;
+    const y = node.position.y;
+    const w = node.width;
+    const h = node.height;
+    
+    // 1. 绘制脉冲光环
+    const pulseRadius = 20 + Math.sin(this.animationTime * 3) * 10;
+    const pulseOpacity = 0.3 + Math.sin(this.animationTime * 4) * 0.2;
+    
+    ctx.save();
+    ctx.globalAlpha = pulseOpacity;
+    ctx.strokeStyle = '#FFD700';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(x + w/2, y + h/2, pulseRadius, 0, 2 * Math.PI);
+    ctx.stroke();
+    ctx.restore();
+    
+    // 2. 绘制运行进度条
+    const progressWidth = w - 20;
+    const progressHeight = 4;
+    const progressX = x + 10;
+    const progressY = y + h - 15;
+    
+    // 进度条背景
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.fillRect(progressX, progressY, progressWidth, progressHeight);
+    
+    // 进度条前景（动画）
+    const progressValue = (Math.sin(this.animationTime * 2) + 1) / 2; // 0-1之间循环
+    const gradient = ctx.createLinearGradient(progressX, progressY, progressX + progressWidth, progressY);
+    gradient.addColorStop(0, '#FFD700');
+    gradient.addColorStop(0.5, '#FF6B6B');
+    gradient.addColorStop(1, '#4ECDC4');
+    
+    ctx.fillStyle = gradient;
+    ctx.fillRect(progressX, progressY, progressWidth * progressValue, progressHeight);
+    
+    // 3. 绘制数据流动粒子效果
+    this.drawDataFlowParticles(ctx, node);
+  }
+
+  private drawDataFlowParticles(ctx: CanvasRenderingContext2D, node: BaseNode): void {
+    // 在输入端口产生粒子，流向输出端口
+    node.inputs.forEach((inputPort, inputIndex) => {
+      node.outputs.forEach((outputPort, outputIndex) => {
+        const particleCount = 3;
+        for (let i = 0; i < particleCount; i++) {
+          // 计算粒子位置（从输入到输出的路径上）
+          const t = (this.animationTime * 2 + i * 0.3 + inputIndex * 0.5) % 1;
+          const startX = inputPort.position.x;
+          const startY = inputPort.position.y;
+          const endX = outputPort.position.x;
+          const endY = outputPort.position.y;
+          
+          // 使用贝塞尔曲线路径
+          const controlX = (startX + endX) / 2;
+          const controlY = (startY + endY) / 2 - 20;
+          
+          // 三次贝塞尔曲线参数计算
+          const invT = 1 - t;
+          const particleX = invT * invT * startX + 2 * invT * t * controlX + t * t * endX;
+          const particleY = invT * invT * startY + 2 * invT * t * controlY + t * t * endY;
+          
+          // 绘制粒子
+          const particleSize = 3 + Math.sin(this.animationTime * 5 + i) * 1;
+          const particleOpacity = 0.8 - t * 0.5; // 粒子逐渐消失
+          
+          ctx.save();
+          ctx.globalAlpha = particleOpacity;
+          ctx.fillStyle = `hsl(${(this.animationTime * 100 + i * 60) % 360}, 100%, 70%)`;
+          ctx.beginPath();
+          ctx.arc(particleX, particleY, particleSize, 0, 2 * Math.PI);
+          ctx.fill();
+          ctx.restore();
+        }
+      });
     });
   }
 }

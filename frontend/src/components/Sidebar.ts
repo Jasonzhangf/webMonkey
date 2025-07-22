@@ -55,15 +55,38 @@ export class Sidebar {
     // Update title
     this.rootCard.updateTitle(`${node.title} Properties`);
 
-    // Node Title Card
-    this.createPropertyCard('title-card', 'Title', 'input', node.title, (value) => {
+    // Basic Properties Section
+    this.createSectionHeader('Basic Properties');
+    
+    // Display Name (Title)
+    this.createPropertyCard('title-card', 'Display Name', 'input', node.title, (value) => {
       node.title = value;
       this.onNodeUpdate(node);
     });
 
-    // Node Type Card (read-only)
+    // Node Name (for variable access)
+    this.createPropertyCard('node-name-card', 'Node Name', 'input', node.nodeName, (value) => {
+      // 清理节点名称：只允许字母、数字、下划线
+      const cleanName = value.replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase();
+      node.nodeName = cleanName;
+      this.onNodeUpdate(node);
+    });
+
+    // Description
+    this.createPropertyCard('description-card', 'Description', 'textarea', node.description, (value) => {
+      node.description = value;
+      this.onNodeUpdate(node);
+    });
+
+    // Node Type (read-only)
     this.createPropertyCard('type-card', 'Type', 'input', node.type, null, true);
 
+    // Variables Section
+    this.createVariablesSection(node);
+
+    // Node-specific properties section
+    this.createSectionHeader('Node Properties');
+    
     // Properties based on node type
     switch (node.type) {
       case 'Action':
@@ -187,6 +210,12 @@ export class Sidebar {
       node.properties.customCount = parseInt(value) || 5;
       this.onNodeUpdate(node);
     }, false, undefined, 'number');
+
+    // 数据合并模式（当有输入时）
+    this.createPropertyCard('merge-mode-card', 'Input Merge Mode', 'select', node.properties.mergeMode || 'extend', (value) => {
+      node.properties.mergeMode = value;
+      this.onNodeUpdate(node);
+    }, false, ['extend', 'wrap', 'replace']);
 
     // 包含时间戳
     this.createPropertyCard('include-timestamp-card', 'Include Timestamp', 'select', node.properties.includeTimestamp ? 'true' : 'false', (value) => {
@@ -350,5 +379,121 @@ export class Sidebar {
     
     emptyCard.setContent(p);
     this.rootCard.addChild(emptyCard);
+  }
+
+  private createSectionHeader(title: string): void {
+    const headerCard = new Card({
+      id: `section-${title.toLowerCase().replace(/\s+/g, '-')}`,
+      className: 'section-header-card'
+    });
+
+    const header = document.createElement('h4');
+    header.textContent = title;
+    header.style.margin = '0';
+    header.style.padding = '8px 0';
+    header.style.color = '#FFC107';
+    header.style.fontSize = '14px';
+    header.style.fontWeight = 'bold';
+    header.style.borderBottom = '1px solid #505050';
+    header.style.textAlign = 'center';
+
+    headerCard.setContent(header);
+    this.rootCard.addChild(headerCard);
+  }
+
+  private createVariablesSection(node: BaseNode): void {
+    this.createSectionHeader('Variables & Ports');
+
+    // Input Variables
+    if (node.inputs.length > 0) {
+      const inputsCard = new Card({
+        id: 'inputs-card',
+        title: 'Input Ports',
+        className: 'ports-card'
+      });
+
+      const inputsList = document.createElement('div');
+      inputsList.style.fontSize = '12px';
+
+      node.inputs.forEach(port => {
+        const portDiv = document.createElement('div');
+        portDiv.style.padding = '4px 0';
+        portDiv.style.borderBottom = '1px solid #444';
+        portDiv.innerHTML = `
+          <strong>${port.id}</strong> (Port ${port.portNumber || 'N/A'})
+          <br><span style="color: #888;">Input</span>
+        `;
+        inputsList.appendChild(portDiv);
+      });
+
+      inputsCard.setContent(inputsList);
+      this.rootCard.addChild(inputsCard);
+    }
+
+    // Output Variables
+    if (node.outputs.length > 0) {
+      const outputsCard = new Card({
+        id: 'outputs-card',
+        title: 'Output Ports',
+        className: 'ports-card'
+      });
+
+      const outputsList = document.createElement('div');
+      outputsList.style.fontSize = '12px';
+
+      node.outputs.forEach(port => {
+        const portDiv = document.createElement('div');
+        portDiv.style.padding = '4px 0';
+        portDiv.style.borderBottom = '1px solid #444';
+        portDiv.innerHTML = `
+          <strong>${port.id}</strong> (Port ${port.portNumber || 'N/A'})
+          <br><span style="color: #888;">Output</span>
+        `;
+        outputsList.appendChild(portDiv);
+      });
+
+      outputsCard.setContent(outputsList);
+      this.rootCard.addChild(outputsCard);
+    }
+
+    // Node Variables
+    const varsCard = new Card({
+      id: 'variables-card',
+      title: 'Node Variables',
+      className: 'variables-card'
+    });
+
+    const varsContent = document.createElement('div');
+    varsContent.innerHTML = `
+      <div style="font-size: 12px; color: #888; margin-bottom: 8px;">
+        Access variables: <code>${node.nodeName}.[variable]</code>
+      </div>
+      <div style="font-size: 11px; color: #666;">
+        Variables are automatically populated during execution.
+      </div>
+    `;
+
+    // 如果有变量，显示它们
+    if (Object.keys(node.variables).length > 0) {
+      const variablesList = document.createElement('div');
+      variablesList.style.marginTop = '8px';
+      variablesList.style.fontSize = '12px';
+
+      Object.entries(node.variables).forEach(([key, value]) => {
+        const varDiv = document.createElement('div');
+        varDiv.style.padding = '4px 0';
+        varDiv.style.borderTop = '1px solid #444';
+        varDiv.innerHTML = `
+          <strong>${key}:</strong> 
+          <span style="color: #888;">${typeof value} = ${JSON.stringify(value).substring(0, 50)}</span>
+        `;
+        variablesList.appendChild(varDiv);
+      });
+
+      varsContent.appendChild(variablesList);
+    }
+
+    varsCard.setContent(varsContent);
+    this.rootCard.addChild(varsCard);
   }
 }

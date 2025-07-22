@@ -10,18 +10,21 @@ export class UIPanel {
   private onSave: () => void;
   private onLoad: (data: any) => void;
   private onRun: () => void;
+  private canvasEditor: any; // 添加对CanvasEditor的引用
 
   constructor(
     nodeTypes: string[],
     onAddNode: (nodeType: string) => void,
     onSave: () => void,
     onLoad: (data: any) => void,
-    onRun: () => void
+    onRun: () => void,
+    canvasEditor?: any
     ) {
     this.onAddNode = onAddNode;
     this.onSave = onSave;
     this.onLoad = onLoad;
     this.onRun = onRun;
+    this.canvasEditor = canvasEditor;
 
     // Create root card
     this.rootCard = new Card({
@@ -128,6 +131,9 @@ export class UIPanel {
     const buttons = [
       { text: 'Save', action: this.onSave, className: 'save-button' },
       { text: 'Load', action: this.createLoadAction(), className: 'load-button' },
+      { text: 'Reset Workflow', action: this.createResetAction(), className: 'reset-button' },
+      { text: 'Auto Layout', action: this.createAutoLayoutAction(), className: 'auto-layout-button' },
+      { text: 'Test Workflow', action: this.createTestAction(), className: 'test-button', special: true },
       { text: 'Undo', action: () => commandHistory.undo(), className: 'undo-button' },
       { text: 'Redo', action: () => commandHistory.redo(), className: 'redo-button' },
       { text: 'Run', action: this.onRun, className: 'run-button', special: true }
@@ -154,19 +160,24 @@ export class UIPanel {
       };
 
       if (special) {
+        // 区分不同的特殊按钮颜色
+        const isTestButton = text === 'Test Workflow';
+        const bgColor = isTestButton ? '#FF9800' : '#4CAF50';
+        const hoverColor = isTestButton ? '#E68900' : '#45a049';
+        
         Object.assign(button.style, {
           ...baseStyles,
-          background: '#4CAF50',
-          borderColor: '#45a049'
+          background: bgColor,
+          borderColor: hoverColor
         });
 
         button.addEventListener('mouseenter', () => {
-          button.style.background = '#45a049';
+          button.style.background = hoverColor;
           button.style.transform = 'translateY(-1px)';
         });
 
         button.addEventListener('mouseleave', () => {
-          button.style.background = '#4CAF50';
+          button.style.background = bgColor;
           button.style.transform = 'translateY(0)';
         });
       } else {
@@ -214,6 +225,82 @@ export class UIPanel {
         }
       };
       input.click();
+    };
+  }
+
+  private createResetAction() {
+    return () => {
+      if (confirm('This will clear the current workflow and create a new default test workflow. Continue?')) {
+        // 清除当前工作流
+        localStorage.removeItem('canvas-editor-state');
+        // 重新加载页面以创建默认工作流
+        window.location.reload();
+      }
+    };
+  }
+
+  private createAutoLayoutAction() {
+    return () => {
+      if (!this.canvasEditor) {
+        console.error('Canvas editor reference not available');
+        alert('Cannot auto layout - editor not available');
+        return;
+      }
+
+      console.log('Starting auto layout...');
+      
+      try {
+        // 执行自动排版
+        this.canvasEditor.autoLayoutNodes();
+        
+        // 显示成功消息
+        console.log('✅ Auto layout completed!');
+        
+      } catch (error) {
+        console.error('Auto layout failed:', error);
+        alert(`❌ Auto layout failed: ${error.message}`);
+      }
+    };
+  }
+
+  private createTestAction() {
+    return async () => {
+      if (!this.canvasEditor) {
+        console.error('Canvas editor reference not available');
+        alert('Cannot run test - editor not available');
+        return;
+      }
+
+      console.log('Starting workflow test...');
+      
+      try {
+        // 显示测试开始消息
+        const testButton = document.querySelector('.test-button') as HTMLButtonElement;
+        const originalText = testButton?.textContent;
+        
+        if (testButton) {
+          testButton.textContent = 'Testing...';
+          testButton.disabled = true;
+        }
+
+        // 执行测试
+        await this.canvasEditor.testWorkflowExecution();
+        
+        // 显示成功消息
+        alert('✅ Workflow test completed successfully! Check console for detailed results.');
+        
+      } catch (error) {
+        console.error('Workflow test failed:', error);
+        alert(`❌ Workflow test failed: ${error.message}\nCheck console for details.`);
+        
+      } finally {
+        // 恢复按钮状态
+        const testButton = document.querySelector('.test-button') as HTMLButtonElement;
+        if (testButton) {
+          testButton.textContent = 'Test Workflow';
+          testButton.disabled = false;
+        }
+      }
     };
   }
 

@@ -23,10 +23,10 @@ export class DisplayNode extends BaseNode {
     };
 
     // 添加输入端口
-    this.inputs.push({ id: 'input', nodeId: this.id, position: { x: 0, y: 0 }, isInput: true });
+    this.inputs.push({ id: 'input', nodeId: this.id, position: { x: 0, y: 0 }, isInput: true, portNumber: 1 });
     
     // 添加输出端口（bypass功能）
-    this.outputs.push({ id: 'output', nodeId: this.id, position: { x: 0, y: 0 }, isInput: false });
+    this.outputs.push({ id: 'output', nodeId: this.id, position: { x: 0, y: 0 }, isInput: false, portNumber: 1 });
 
     // 更新端口位置
     this.updatePortPositions();

@@ -6,7 +6,7 @@ import { BaseNode, NodePosition, WorkflowData } from './BaseNode';
 export class StartNode extends BaseNode {
   constructor(position: NodePosition) {
     super(position, 'Start');
-    this.outputs.push({ id: 'out', nodeId: this.id, position: { x: 0, y: 0 }, isInput: false });
+    this.outputs.push({ id: 'out', nodeId: this.id, position: { x: 0, y: 0 }, isInput: false, portNumber: 1 });
     this.updatePortPositions();
   }
 
