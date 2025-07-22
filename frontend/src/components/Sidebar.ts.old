@@ -1,0 +1,340 @@
+/**
+ * Sidebar - Node properties editor (重构版)
+ * 职责：节点属性编辑的主协调器
+ * 
+ * 🚨 此文件严格限制在500行以内 - 细菌化原则
+ */
+import { BaseNode } from '../nodes/BaseNode';
+import { Card } from './Card';
+import { NodePropertyRenderers } from './renderers/NodePropertyRenderers';
+
+export class Sidebar {
+  private sidebarElement: HTMLElement;
+  private rootCard: Card;
+  private currentNode: BaseNode | null = null;
+  private onNodeUpdate: (node: BaseNode) => void;
+  private propertyRenderers: NodePropertyRenderers;
+
+  constructor(onNodeUpdate: (node: BaseNode) => void) {
+    this.sidebarElement = document.getElementById('sidebar')!;
+    this.onNodeUpdate = onNodeUpdate;
+    
+    // Create root card for sidebar content
+    this.rootCard = new Card({
+      id: 'sidebar-root',
+      title: 'Node Properties',
+      className: 'sidebar-root-card'
+    });
+
+    // Initialize property renderers
+    this.propertyRenderers = new NodePropertyRenderers(this.rootCard, this.onNodeUpdate);
+
+    // Clear existing content and add root card
+    const contentElement = document.getElementById('sidebar-content')!;
+    contentElement.innerHTML = '';
+    contentElement.appendChild(this.rootCard.getElement());
+
+    // Set initial empty state
+    this.showEmptyState();
+  }
+
+  public show(node: BaseNode): void {
+    this.currentNode = node;
+    this.sidebarElement.classList.add('open');
+    this.renderNodeProperties(node);
+  }
+
+  public hide(): void {
+    this.sidebarElement.classList.remove('open');
+    this.currentNode = null;
+    this.showEmptyState();
+  }
+
+  private showEmptyState(): void {
+    this.rootCard.setContent('<p style="color: #888; font-size: 12px; text-align: center;">Select a node to edit its properties</p>');
+  }
+
+  private renderNodeProperties(node: BaseNode): void {
+    // Clear existing children
+    this.rootCard.getChildren().forEach(child => {
+      this.rootCard.removeChild(child.getId());
+    });
+
+    // Update title
+    this.rootCard.updateTitle(`${node.title} Properties`);
+
+    // Basic Properties Section
+    this.createSectionHeader('Basic Properties');
+    this.renderBasicProperties(node);
+
+    // Variables Section
+    this.createVariablesSection(node);
+
+    // Node-specific properties section
+    this.createSectionHeader('Node Properties');
+    this.renderNodeSpecificProperties(node);
+  }
+
+  private renderBasicProperties(node: BaseNode): void {
+    // Display Name (Title)
+    this.createPropertyCard('title-card', 'Display Name', 'input', node.title, (value) => {
+      node.title = value;
+      this.onNodeUpdate(node);
+    });
+
+    // Node Name (for variable access)
+    this.createPropertyCard('node-name-card', 'Node Name', 'input', node.nodeName, (value) => {
+      // 清理节点名称：只允许字母、数字、下划线
+      const cleanName = value.replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase();
+      node.nodeName = cleanName;
+      this.onNodeUpdate(node);
+    });
+
+    // Description
+    this.createPropertyCard('description-card', 'Description', 'textarea', node.description, (value) => {
+      node.description = value;
+      this.onNodeUpdate(node);
+    });
+
+    // Node Type (read-only)
+    this.createPropertyCard('type-card', 'Type', 'input', node.type, null, true);
+  }
+
+  private renderNodeSpecificProperties(node: BaseNode): void {
+    // Properties based on node type
+    switch (node.type) {
+      case 'Action':
+        this.propertyRenderers.renderActionProperties(node);
+        break;
+      case 'Conditional':
+        this.propertyRenderers.renderConditionalProperties(node);
+        break;
+      case 'Loop':
+        this.propertyRenderers.renderLoopProperties(node);
+        break;
+      case 'Display':
+        this.propertyRenderers.renderDisplayProperties(node);
+        break;
+      case 'ContentGenerator':
+        this.propertyRenderers.renderContentGeneratorProperties(node);
+        break;
+      case 'JsonMerger':
+        this.propertyRenderers.renderJsonMergerProperties(node);
+        break;
+      case 'JsonFilter':
+        this.propertyRenderers.renderJsonFilterProperties(node);
+        break;
+      default:
+        this.createEmptyMessageCard(`No additional properties for ${node.type} node`);
+    }
+  }
+
+  private createPropertyCard(
+    cardId: string,
+    label: string, 
+    type: 'input' | 'textarea' | 'select', 
+    value: string, 
+    onChange: ((value: string) => void) | null,
+    readonly: boolean = false,
+    options?: string[],
+    inputType: string = 'text'
+  ): void {
+    const propertyCard = new Card({
+      id: cardId,
+      title: label,
+      className: 'property-card'
+    });
+
+    let input: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+
+    if (type === 'select' && options) {
+      input = document.createElement('select');
+      options.forEach(option => {
+        const optionEl = document.createElement('option');
+        optionEl.value = option;
+        optionEl.textContent = option;
+        optionEl.selected = option === value;
+        input.appendChild(optionEl);
+      });
+    } else if (type === 'textarea') {
+      input = document.createElement('textarea');
+      input.value = value;
+    } else {
+      input = document.createElement('input');
+      input.type = inputType;
+      input.value = value;
+    }
+
+    // Style the input
+    Object.assign(input.style, {
+      width: '100%',
+      padding: '8px 10px',
+      background: '#3a3a3a',
+      border: '1px solid #505050',
+      borderRadius: '4px',
+      color: '#ffffff',
+      fontSize: '12px',
+      boxSizing: 'border-box'
+    });
+
+    input.addEventListener('focus', () => {
+      input.style.borderColor = '#FFC107';
+    });
+
+    input.addEventListener('blur', () => {
+      input.style.borderColor = '#505050';
+    });
+
+    if (type === 'textarea') {
+      input.style.height = '80px';
+      input.style.resize = 'vertical';
+    }
+
+    if (readonly) {
+      input.disabled = true;
+    }
+
+    if (onChange) {
+      input.addEventListener('input', (e) => {
+        const target = e.target as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+        onChange(target.value);
+      });
+    }
+
+    propertyCard.setContent(input);
+    this.rootCard.addChild(propertyCard);
+  }
+
+  private createEmptyMessageCard(message: string): void {
+    const emptyCard = new Card({
+      id: 'empty-message-card',
+      className: 'empty-message-card'
+    });
+    
+    const p = document.createElement('p');
+    p.style.color = '#888';
+    p.style.fontSize = '12px';
+    p.style.fontStyle = 'italic';
+    p.style.textAlign = 'center';
+    p.textContent = message;
+    
+    emptyCard.setContent(p);
+    this.rootCard.addChild(emptyCard);
+  }
+
+  private createSectionHeader(title: string): void {
+    const headerCard = new Card({
+      id: `section-${title.toLowerCase().replace(/\s+/g, '-')}`,
+      className: 'section-header-card'
+    });
+
+    const header = document.createElement('h4');
+    header.textContent = title;
+    header.style.margin = '0';
+    header.style.padding = '8px 0';
+    header.style.color = '#FFC107';
+    header.style.fontSize = '14px';
+    header.style.fontWeight = 'bold';
+    header.style.borderBottom = '1px solid #505050';
+    header.style.textAlign = 'center';
+
+    headerCard.setContent(header);
+    this.rootCard.addChild(headerCard);
+  }
+
+  private createVariablesSection(node: BaseNode): void {
+    this.createSectionHeader('Variables & Ports');
+
+    // Input Variables
+    if (node.inputs.length > 0) {
+      const inputsCard = new Card({
+        id: 'inputs-card',
+        title: 'Input Ports',
+        className: 'ports-card'
+      });
+
+      const inputsList = document.createElement('div');
+      inputsList.style.fontSize = '12px';
+
+      node.inputs.forEach(port => {
+        const portDiv = document.createElement('div');
+        portDiv.style.padding = '4px 0';
+        portDiv.style.borderBottom = '1px solid #444';
+        portDiv.innerHTML = `
+          <strong>${port.id}</strong> (Port ${port.portNumber || 'N/A'})
+          <br><span style="color: #888;">Input</span>
+        `;
+        inputsList.appendChild(portDiv);
+      });
+
+      inputsCard.setContent(inputsList);
+      this.rootCard.addChild(inputsCard);
+    }
+
+    // Output Variables
+    if (node.outputs.length > 0) {
+      const outputsCard = new Card({
+        id: 'outputs-card',
+        title: 'Output Ports',
+        className: 'ports-card'
+      });
+
+      const outputsList = document.createElement('div');
+      outputsList.style.fontSize = '12px';
+
+      node.outputs.forEach(port => {
+        const portDiv = document.createElement('div');
+        portDiv.style.padding = '4px 0';
+        portDiv.style.borderBottom = '1px solid #444';
+        portDiv.innerHTML = `
+          <strong>${port.id}</strong> (Port ${port.portNumber || 'N/A'})
+          <br><span style="color: #888;">Output</span>
+        `;
+        outputsList.appendChild(portDiv);
+      });
+
+      outputsCard.setContent(outputsList);
+      this.rootCard.addChild(outputsCard);
+    }
+
+    // Node Variables
+    const varsCard = new Card({
+      id: 'variables-card',
+      title: 'Node Variables',
+      className: 'variables-card'
+    });
+
+    const varsContent = document.createElement('div');
+    varsContent.innerHTML = `
+      <div style="font-size: 12px; color: #888; margin-bottom: 8px;">
+        Access variables: <code>${node.nodeName}.[variable]</code>
+      </div>
+      <div style="font-size: 11px; color: #666;">
+        Variables are automatically populated during execution.
+      </div>
+    `;
+
+    // 如果有变量，显示它们
+    if (Object.keys(node.variables).length > 0) {
+      const variablesList = document.createElement('div');
+      variablesList.style.marginTop = '8px';
+      variablesList.style.fontSize = '12px';
+
+      Object.entries(node.variables).forEach(([key, value]) => {
+        const varDiv = document.createElement('div');
+        varDiv.style.padding = '4px 0';
+        varDiv.style.borderTop = '1px solid #444';
+        varDiv.innerHTML = `
+          <strong>${key}:</strong> 
+          <span style="color: #888;">${typeof value} = ${JSON.stringify(value).substring(0, 50)}</span>
+        `;
+        variablesList.appendChild(varDiv);
+      });
+
+      varsContent.appendChild(variablesList);
+    }
+
+    varsCard.setContent(varsContent);
+    this.rootCard.addChild(varsCard);
+  }
+}
