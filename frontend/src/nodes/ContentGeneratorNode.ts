@@ -18,7 +18,8 @@ export class ContentGeneratorNode extends BaseNode {
     super(position, 'ContentGenerator');
     this.title = 'Content Generator';
     
-    // 添加输出端口
+    // ContentGenerator可以独立工作，不需要输入端口
+    // 只添加输出端口
     this.outputs.push({ id: 'output', nodeId: this.id, position: { x: 0, y: 0 }, isInput: false });
     
     // 初始化模板

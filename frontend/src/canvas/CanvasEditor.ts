@@ -122,18 +122,214 @@ export class CanvasEditor {
   private addInitialNodes(): void {
     const currentState = editorState.getState();
     
-    // Only add Start node if it doesn't exist
-    const hasStart = currentState.nodes.some(node => node.type === 'Start');
-    if (!hasStart) {
-      const startPosition = this.findAvailablePosition(100, 200);
-      this.addNode('Start', startPosition);
+    // 如果已经有节点了，不创建默认工作流
+    if (currentState.nodes.length > 0) {
+      return;
     }
+
+    console.log('Creating default test workflow...');
+
+    // 创建默认测试工作流
+    this.createDefaultTestWorkflow();
+  }
+
+  private createDefaultTestWorkflow(): void {
+    // 节点位置配置
+    const positions = {
+      start: { x: 50, y: 200 },
+      contentGen: { x: 250, y: 200 },
+      contentGen2: { x: 250, y: 350 },
+      merger: { x: 450, y: 275 },
+      filter: { x: 650, y: 275 },
+      display: { x: 850, y: 275 },
+      end: { x: 1050, y: 275 }
+    };
+
+    // 1. Start节点 (已自动配置测试数据)
+    const startNode = this.addNode('Start', positions.start);
     
-    // Only add End node if it doesn't exist  
-    const hasEnd = currentState.nodes.some(node => node.type === 'End');
-    if (!hasEnd) {
-      const endPosition = this.findAvailablePosition(400, 200);
-      this.addNode('End', endPosition);
+    // 2. ContentGenerator节点 - 生成产品数据
+    const contentGenNode = this.addNode('ContentGenerator', positions.contentGen);
+    if (contentGenNode) {
+      contentGenNode.properties = {
+        templateName: 'product-catalog',
+        customCount: 3,
+        includeTimestamp: true
+      };
+      contentGenNode.title = 'Product Generator';
+    }
+
+    // 3. 第二个ContentGenerator节点 - 生成用户数据  
+    const contentGen2Node = this.addNode('ContentGenerator', positions.contentGen2);
+    if (contentGen2Node) {
+      contentGen2Node.properties = {
+        templateName: 'user-profile', 
+        customCount: 1,
+        includeTimestamp: true
+      };
+      contentGen2Node.title = 'User Generator';
+    }
+
+    // 4. JsonMerger节点 - 合并数据
+    const mergerNode = this.addNode('JsonMerger', positions.merger);
+    if (mergerNode) {
+      mergerNode.properties = {
+        mergeStrategy: 'merge',
+        mergeKey: 'combinedData',
+        conflictResolution: 'combine',
+        deepMerge: true,
+        preserveArrays: true
+      };
+      mergerNode.title = 'Data Merger';
+    }
+
+    // 5. JsonFilter节点 - 过滤关键字段
+    const filterNode = this.addNode('JsonFilter', positions.filter);
+    if (filterNode) {
+      filterNode.properties = {
+        filterMode: 'include',
+        filterPaths: [
+          'combinedData.user.name',
+          'combinedData.user.email', 
+          'combinedData.products',
+          'combinedData.generatedAt'
+        ],
+        preserveStructure: true,
+        allowEmptyResults: true,
+        includeMetadata: true
+      };
+      filterNode.title = 'Key Fields Filter';
+    }
+
+    // 6. Display节点 - 显示处理结果
+    const displayNode = this.addNode('Display', positions.display);
+    if (displayNode) {
+      displayNode.properties = {
+        displayFormat: 'json',
+        maxDepth: 4,
+        showTypes: false,
+        collapseMode: 'first-level'
+      };
+      displayNode.title = 'Result Display';
+    }
+
+    // 7. End节点
+    const endNode = this.addNode('End', positions.end);
+
+    // 等待节点创建完成，然后创建连接
+    setTimeout(() => {
+      this.createDefaultConnections();
+    }, 100);
+  }
+
+  private createDefaultConnections(): void {
+    const currentState = editorState.getState();
+    const nodes = currentState.nodes;
+
+    // 查找节点
+    const startNode = nodes.find(n => n.type === 'Start');
+    const contentGenNodes = nodes.filter(n => n.type === 'ContentGenerator');
+    const mergerNode = nodes.find(n => n.type === 'JsonMerger');  
+    const filterNode = nodes.find(n => n.type === 'JsonFilter');
+    const displayNode = nodes.find(n => n.type === 'Display');
+    const endNode = nodes.find(n => n.type === 'End');
+
+    if (!startNode || contentGenNodes.length < 2 || !mergerNode || !filterNode || !displayNode || !endNode) {
+      console.error('Not all nodes found for creating connections');
+      return;
+    }
+
+    const connections = [];
+
+    try {
+      // Start -> ContentGenerator1 (产品生成器)
+      const startOutPort = startNode.outputs[0];
+      const contentGen1InPort = contentGenNodes[0].inputs[0];
+      if (startOutPort && contentGen1InPort) {
+        connections.push({
+          id: `conn_${Date.now()}_1`,
+          from: startOutPort,
+          to: contentGen1InPort
+        });
+      }
+
+      // Start -> ContentGenerator2 (用户生成器) 
+      const contentGen2InPort = contentGenNodes[1].inputs[0];
+      if (startOutPort && contentGen2InPort) {
+        connections.push({
+          id: `conn_${Date.now()}_2`,
+          from: startOutPort,
+          to: contentGen2InPort
+        });
+      }
+
+      // ContentGenerator1 -> JsonMerger (input1)
+      const contentGen1OutPort = contentGenNodes[0].outputs[0];
+      const mergerIn1Port = mergerNode.inputs[0];
+      if (contentGen1OutPort && mergerIn1Port) {
+        connections.push({
+          id: `conn_${Date.now()}_3`,
+          from: contentGen1OutPort,
+          to: mergerIn1Port
+        });
+      }
+
+      // ContentGenerator2 -> JsonMerger (input2)
+      const contentGen2OutPort = contentGenNodes[1].outputs[0];
+      const mergerIn2Port = mergerNode.inputs[1];
+      if (contentGen2OutPort && mergerIn2Port) {
+        connections.push({
+          id: `conn_${Date.now()}_4`,
+          from: contentGen2OutPort,
+          to: mergerIn2Port
+        });
+      }
+
+      // JsonMerger -> JsonFilter
+      const mergerOutPort = mergerNode.outputs[0];
+      const filterInPort = filterNode.inputs[0];
+      if (mergerOutPort && filterInPort) {
+        connections.push({
+          id: `conn_${Date.now()}_5`,
+          from: mergerOutPort,
+          to: filterInPort
+        });
+      }
+
+      // JsonFilter -> Display
+      const filterOutPort = filterNode.outputs[0];
+      const displayInPort = displayNode.inputs[0];
+      if (filterOutPort && displayInPort) {
+        connections.push({
+          id: `conn_${Date.now()}_6`,
+          from: filterOutPort,
+          to: displayInPort
+        });
+      }
+
+      // Display -> End
+      const displayOutPort = displayNode.outputs[0];
+      const endInPort = endNode.inputs[0];
+      if (displayOutPort && endInPort) {
+        connections.push({
+          id: `conn_${Date.now()}_7`,
+          from: displayOutPort,
+          to: endInPort
+        });
+      }
+
+      // 更新状态
+      const newState = {
+        ...currentState,
+        connections: connections
+      };
+      
+      editorState.setState(newState);
+      console.log('Default test workflow created successfully!');
+      console.log('Workflow: Start → ProductGen + UserGen → Merge → Filter → Display → End');
+      
+    } catch (error) {
+      console.error('Error creating default connections:', error);
     }
   }
 
