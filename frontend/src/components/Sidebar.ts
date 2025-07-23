@@ -87,8 +87,8 @@ export class Sidebar {
     container.style.gap = '12px';
     container.style.height = '100%';
 
-    // 1. 默认属性区 (只读)
-    this.createDefaultPropertiesCard(node);
+    // 1. 节点配置区 (合并默认属性和基础配置)
+    this.createNodeConfigCard(node);
     if (this.defaultPropertiesCard) {
       container.appendChild(this.defaultPropertiesCard.getElement());
     }
@@ -99,13 +99,7 @@ export class Sidebar {
       container.appendChild(this.portsCard.getElement());
     }
 
-    // 3. 变量配置区
-    this.createVariablesCard(node);
-    if (this.variablesCard) {
-      container.appendChild(this.variablesCard.getElement());
-    }
-
-    // 4. 节点特定配置区
+    // 3. 节点特定配置区
     this.createNodeSpecificCard(node);
     if (this.nodeSpecificCard) {
       container.appendChild(this.nodeSpecificCard.getElement());
@@ -114,10 +108,10 @@ export class Sidebar {
     this.contentElement.appendChild(container);
   }
 
-  private createDefaultPropertiesCard(node: BaseNode): void {
+  private createNodeConfigCard(node: BaseNode): void {
     this.defaultPropertiesCard = new Card({
-      id: 'default-properties-card',
-      title: '📋 默认属性 (只读)',
+      id: 'node-config-card',
+      title: '📋 节点配置',
       className: 'sidebar-section-card'
     });
 
@@ -126,18 +120,29 @@ export class Sidebar {
     content.style.flexDirection = 'column';
     content.style.gap = '8px';
 
-    // 节点编号
+    // 节点编号 (只读)
     const nodeNumber = (node as any).nodeNumber || 'N/A';
     this.addReadOnlyProperty(content, '编号', nodeNumber.toString());
     
-    // 节点ID (部分显示)
+    // 显示名称 (可编辑)
+    this.addEditableProperty(content, '显示名称', node.title, (value) => {
+      node.title = value;
+      this.onNodeUpdate(node);
+      this.updateCardTitle();
+    });
+    
+    // 节点名称 (可编辑)
+    this.addEditableProperty(content, '节点名称', node.nodeName, (value) => {
+      const cleanName = value.replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase();
+      node.nodeName = cleanName;
+      this.onNodeUpdate(node);
+    });
+    
+    // 节点ID (部分显示，只读)
     this.addReadOnlyProperty(content, 'ID', node.id.substring(0, 8) + '...');
     
-    // 节点类型
+    // 节点类型 (只读)
     this.addReadOnlyProperty(content, '类型', node.type);
-    
-    // 创建时间 (模拟)
-    this.addReadOnlyProperty(content, '创建时间', new Date().toLocaleString());
 
     this.defaultPropertiesCard.setContent(content);
   }
@@ -150,75 +155,65 @@ export class Sidebar {
     });
 
     const content = document.createElement('div');
-    content.style.display = 'flex';
-    content.style.flexDirection = 'column';
-    content.style.gap = '12px';
-
-    // 输入端口
-    if (node.inputs.length > 0) {
-      const inputSection = document.createElement('div');
-      inputSection.innerHTML = `
-        <div style="font-weight: bold; color: #4CAF50; margin-bottom: 8px; font-size: 12px;">
-          📥 输入端口 (${node.inputs.length})
-        </div>
+    
+    // 使用网格布局显示端口信息
+    if (node.inputs.length > 0 || node.outputs.length > 0) {
+      content.style.cssText = `
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
       `;
-      
-      const inputList = document.createElement('div');
-      inputList.style.display = 'flex';
-      inputList.style.flexDirection = 'column';
-      inputList.style.gap = '4px';
-      
-      node.inputs.forEach((port, index) => {
-        const portItem = document.createElement('div');
-        portItem.style.padding = '8px 12px';
-        portItem.style.background = '#3a3a3a';
-        portItem.style.borderRadius = '4px';
-        portItem.style.border = '1px solid #4CAF50';
-        portItem.style.fontSize = '11px';
-        portItem.innerHTML = `
-          <strong>${port.id}</strong><br>
-          <span style="color: #888;">端口 ${port.portNumber || index + 1}</span>
-        `;
-        inputList.appendChild(portItem);
-      });
-      
-      inputSection.appendChild(inputList);
-      content.appendChild(inputSection);
-    }
 
-    // 输出端口
-    if (node.outputs.length > 0) {
-      const outputSection = document.createElement('div');
-      outputSection.innerHTML = `
-        <div style="font-weight: bold; color: #2196F3; margin-bottom: 8px; font-size: 12px;">
-          📤 输出端口 (${node.outputs.length})
-        </div>
-      `;
-      
-      const outputList = document.createElement('div');
-      outputList.style.display = 'flex';
-      outputList.style.flexDirection = 'column';
-      outputList.style.gap = '4px';
-      
-      node.outputs.forEach((port, index) => {
-        const portItem = document.createElement('div');
-        portItem.style.padding = '8px 12px';
-        portItem.style.background = '#3a3a3a';
-        portItem.style.borderRadius = '4px';
-        portItem.style.border = '1px solid #2196F3';
-        portItem.style.fontSize = '11px';
-        portItem.innerHTML = `
-          <strong>${port.id}</strong><br>
-          <span style="color: #888;">端口 ${port.portNumber || index + 1}</span>
+      // 输入端口
+      if (node.inputs.length > 0) {
+        const inputInfo = document.createElement('div');
+        inputInfo.style.cssText = `
+          padding: 8px 12px;
+          background: #3a3a3a;
+          border-radius: 4px;
+          border: 1px solid #4CAF50;
+          font-size: 12px;
+          text-align: center;
         `;
-        outputList.appendChild(portItem);
-      });
-      
-      outputSection.appendChild(outputList);
-      content.appendChild(outputSection);
-    }
+        
+        const inputNames = node.inputs.map(port => port.id).join(', ');
+        inputInfo.innerHTML = `
+          <div style="color: #4CAF50; font-weight: bold; margin-bottom: 4px;">📥 输入</div>
+          <div style="color: #fff;">${inputNames}</div>
+        `;
+        
+        content.appendChild(inputInfo);
+      } else {
+        // 占位空div保持网格布局
+        const placeholder = document.createElement('div');
+        content.appendChild(placeholder);
+      }
 
-    if (node.inputs.length === 0 && node.outputs.length === 0) {
+      // 输出端口
+      if (node.outputs.length > 0) {
+        const outputInfo = document.createElement('div');
+        outputInfo.style.cssText = `
+          padding: 8px 12px;
+          background: #3a3a3a;
+          border-radius: 4px;
+          border: 1px solid #2196F3;
+          font-size: 12px;
+          text-align: center;
+        `;
+        
+        const outputNames = node.outputs.map(port => port.id).join(', ');
+        outputInfo.innerHTML = `
+          <div style="color: #2196F3; font-weight: bold; margin-bottom: 4px;">📤 输出</div>
+          <div style="color: #fff;">${outputNames}</div>
+        `;
+        
+        content.appendChild(outputInfo);
+      } else {
+        // 占位空div保持网格布局
+        const placeholder = document.createElement('div');
+        content.appendChild(placeholder);
+      }
+    } else {
       content.innerHTML = `
         <div style="text-align: center; color: #888; font-style: italic; padding: 20px;">
           此节点没有端口
@@ -229,23 +224,6 @@ export class Sidebar {
     this.portsCard.setContent(content);
   }
 
-  private createVariablesCard(node: BaseNode): void {
-    this.variablesCard = new Card({
-      id: 'variables-card',
-      title: '⚙️ 节点配置',
-      className: 'sidebar-section-card'
-    });
-
-    const content = document.createElement('div');
-    content.style.display = 'flex';
-    content.style.flexDirection = 'column';
-    content.style.gap = '12px';
-
-    // 基础可编辑属性
-    this.addEditableProperties(content, node);
-
-    this.variablesCard.setContent(content);
-  }
 
   private createNodeSpecificCard(node: BaseNode): void {
     this.nodeSpecificCard = new Card({
@@ -344,41 +322,6 @@ export class Sidebar {
     container.appendChild(propertyDiv);
   }
 
-  private addEditableProperties(container: HTMLElement, node: BaseNode): void {
-    // 显示名称
-    this.addEditableProperty(container, '显示名称', node.title, (value) => {
-      node.title = value;
-      this.onNodeUpdate(node);
-      this.updateCardTitle();
-    });
-
-    // 节点名称（用于变量访问）
-    this.addEditableProperty(container, '节点名称', node.nodeName, (value) => {
-      const cleanName = value.replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase();
-      node.nodeName = cleanName;
-      this.onNodeUpdate(node);
-    });
-
-    // 描述
-    this.addEditableProperty(container, '描述', node.description, (value) => {
-      node.description = value;
-      this.onNodeUpdate(node);
-    }, 'textarea');
-
-    // 变量访问提示
-    const hintDiv = document.createElement('div');
-    hintDiv.style.padding = '8px 12px';
-    hintDiv.style.background = '#2a4d3a';
-    hintDiv.style.borderRadius = '4px';
-    hintDiv.style.border = '1px solid #4CAF50';
-    hintDiv.style.fontSize = '11px';
-    hintDiv.style.color = '#4CAF50';
-    hintDiv.innerHTML = `
-      <div style="font-weight: bold; margin-bottom: 4px;">💡 变量访问</div>
-      <div>在其他节点中使用: <code style="background: #1a1a1a; padding: 2px 4px; border-radius: 2px;">${node.nodeName}.变量名</code></div>
-    `;
-    container.appendChild(hintDiv);
-  }
 
   private addEditableProperty(
     container: HTMLElement, 

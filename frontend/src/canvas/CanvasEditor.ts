@@ -23,6 +23,18 @@ import { WorkflowBuilder } from './workflow/WorkflowBuilder';
 import { NodeVariableManager } from './managers/NodeVariableManager';
 import { Connection } from './types/CanvasTypes';
 
+// 导入测试系统
+import { TestRunner } from '../tests/TestRunner';
+
+// 导入工作流存储系统
+import { 
+  WorkflowStorageService, 
+  WorkflowLoader, 
+  WorkflowData,
+  LoadOptions,
+  initializeWorkflowStorage
+} from '../storage';
+
 export type { Connection } from './types/CanvasTypes';
 
 export class CanvasEditor {
@@ -38,6 +50,12 @@ export class CanvasEditor {
   private layoutManager: CanvasLayoutManager;
   private workflowBuilder: WorkflowBuilder;
   private variableManager: NodeVariableManager;
+  private testRunner: TestRunner;
+  
+  // 工作流存储系统
+  private storageService: WorkflowStorageService | null = null;
+  private workflowLoader: WorkflowLoader | null = null;
+  private workflowToolbar: any = null;
   
   // Data
   private nodes: BaseNode[] = [];
@@ -74,10 +92,36 @@ export class CanvasEditor {
     this.layoutManager = new CanvasLayoutManager(this.canvas);
     this.workflowBuilder = new WorkflowBuilder(this.addNode.bind(this));
     this.variableManager = new NodeVariableManager();
+    this.testRunner = new TestRunner();
+    
+    // 异步初始化工作流存储系统
+    this.initializeStorageSystem();
+    
+    // 创建工作流工具栏
+    const toolbarContainer = this.createToolbarContainer();
+    container.appendChild(toolbarContainer);
+    this.initializeWorkflowToolbar(toolbarContainer);
 
     // 初始化编辑器
     this.initialize();
     editorState.subscribe(this.onStateUpdate.bind(this));
+    
+    // 将编辑器实例传递给各个模块
+    this.testRunner.setEditor(this);
+    // storageService 将在异步初始化完成后设置编辑器引用
+  }
+  
+  private createToolbarContainer(): HTMLElement {
+    const toolbarContainer = document.createElement('div');
+    toolbarContainer.id = 'workflow-toolbar-container';
+    toolbarContainer.style.cssText = `
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 1000;
+      width: 200px;
+    `;
+    return toolbarContainer;
   }
 
   private initialize(): void {
@@ -302,24 +346,160 @@ export class CanvasEditor {
     return editorState.getState();
   }
   
-  public saveWorkflow(): void {
-    const workflowData = this.serializeWorkflow();
-    const dataStr = JSON.stringify(workflowData, null, 2);
-    const blob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'workflow.json';
-    a.click();
-    URL.revokeObjectURL(url);
+  // 工作流存储和加载 - 使用新的存储系统
+  public async saveWorkflow(filename?: string): Promise<void> {
+    try {
+      await this.storageService.saveWorkflow({ filename });
+    } catch (error) {
+      console.error('Failed to save workflow:', error);
+      throw error;
+    }
   }
 
-  public loadWorkflow(data: any): void {
-    // Basic validation
-    if (data && Array.isArray(data.nodes) && Array.isArray(data.connections)) {
-      editorState.setState(data);
-    } else {
-      console.error("Invalid workflow data format.");
+  public async loadWorkflow(filename: string): Promise<void> {
+    try {
+      await this.storageService.loadWorkflow(filename);
+    } catch (error) {
+      console.error('Failed to load workflow:', error);
+      throw error;
+    }
+  }
+  
+  // 加载工作流数据到编辑器 - 供WorkflowStorageService调用
+  public async loadWorkflowData(workflowData: WorkflowData): Promise<void> {
+    if (!this.workflowLoader) {
+      console.warn('⚠️ WorkflowLoader not initialized yet, skipping workflow load');
+      return;
+    }
+    
+    const loadOptions: LoadOptions = {
+      preservePositions: true,
+      validateConnections: true,
+      skipMissingNodes: false,
+      centerAfterLoad: true
+    };
+    
+    const result = await this.workflowLoader.loadWorkflow(workflowData, loadOptions);
+    
+    if (!result.success) {
+      throw new Error(`Failed to load workflow: ${result.errors.join(', ')}`);
+    }
+    
+    console.log(`✅ Workflow loaded: ${result.nodesLoaded} nodes, ${result.connectionsLoaded} connections`);
+  }
+  
+  // 创建默认工作流 - 供WorkflowStorageService调用
+  public async createDefaultWorkflow(): Promise<void> {
+    this.clearCanvas();
+    await this.addInitialNodes();
+  }
+  
+  // 清空画布
+  public clearCanvas(): void {
+    // 清空状态
+    editorState.setState({
+      ...editorState.getState(),
+      nodes: [],
+      connections: [],
+      selectedNodes: []
+    });
+    
+    // 重新渲染
+    this.render();
+  }
+  
+  // 设置缩放和平移
+  public setZoom(zoom: number): void {
+    this.interactions.setZoom(zoom);
+  }
+  
+  public setPan(panX: number, panY: number): void {
+    this.interactions.setPan(panX, panY);
+  }
+  
+  // 居中视图
+  public centerView(): void {
+    if (this.nodes.length === 0) return;
+    
+    // 计算所有节点的边界框
+    let minX = Infinity, minY = Infinity;
+    let maxX = -Infinity, maxY = -Infinity;
+    
+    this.nodes.forEach(node => {
+      const pos = node.getPosition();
+      const size = node.getSize();
+      
+      minX = Math.min(minX, pos.x);
+      minY = Math.min(minY, pos.y);
+      maxX = Math.max(maxX, pos.x + size.width);
+      maxY = Math.max(maxY, pos.y + size.height);
+    });
+    
+    // 计算中心点
+    const centerX = (minX + maxX) / 2;
+    const centerY = (minY + maxY) / 2;
+    
+    // 计算画布中心
+    const canvasCenterX = this.canvas.width / 2;
+    const canvasCenterY = this.canvas.height / 2;
+    
+    // 设置平移使节点居中
+    this.setPan(canvasCenterX - centerX, canvasCenterY - centerY);
+    
+    this.render();
+  }
+  
+  // 刷新编辑器显示
+  public refresh(): void {
+    this.render();
+  }
+  
+  // 异步初始化存储系统
+  private async initializeStorageSystem(): Promise<void> {
+    try {
+      const storageSystem = await initializeWorkflowStorage();
+      this.storageService = storageSystem.storageService;
+      this.workflowLoader = new WorkflowLoader(this);
+      
+      // 设置存储服务的编辑器引用
+      this.storageService.setEditor(this);
+      
+      console.log('✅ Storage system initialized successfully');
+    } catch (error) {
+      console.error('❌ Failed to initialize storage system:', error);
+      // 创建一个空的存储服务作为后备
+      this.storageService = null;
+      this.workflowLoader = null;
+    }
+  }
+  
+  // 异步初始化工作流工具栏
+  private async initializeWorkflowToolbar(container: HTMLElement): Promise<void> {
+    try {
+      const { WorkflowToolbar } = await import('../storage');
+      this.workflowToolbar = new WorkflowToolbar(container);
+      console.log('✅ Workflow toolbar initialized successfully');
+    } catch (error) {
+      console.error('❌ Failed to initialize workflow toolbar:', error);
+      this.workflowToolbar = null;
+    }
+  }
+  
+  // 添加连接 - 供WorkflowLoader调用
+  public addConnection(connection: Connection): boolean {
+    try {
+      const currentState = editorState.getState();
+      const newConnections = [...currentState.connections, connection];
+      
+      editorState.setState({
+        ...currentState,
+        connections: newConnections
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Failed to add connection:', error);
+      return false;
     }
   }
 

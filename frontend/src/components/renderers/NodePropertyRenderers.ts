@@ -19,172 +19,309 @@ export class NodePropertyRenderers {
     const observation = operationUnit.observation || {};
     const action = operationUnit.action || {};
 
-    // Action Type
-    this.createPropertyCard('action-type-card', 'Action Type', 'select', action.type || 'click', (value) => {
-      if (!node.properties.operationUnit) node.properties.operationUnit = {};
-      if (!node.properties.operationUnit.action) node.properties.operationUnit.action = {};
-      node.properties.operationUnit.action.type = value;
-      this.onNodeUpdate(node);
-    }, false, ['click', 'type', 'hover', 'scroll', 'wait']);
-
-    // CSS Selector
-    const targetValue = observation.target?.primary?.value || '';
-    this.createPropertyCard('css-selector-card', 'CSS Selector', 'input', targetValue, (value) => {
-      if (!node.properties.operationUnit) node.properties.operationUnit = {};
-      if (!node.properties.operationUnit.observation) node.properties.operationUnit.observation = {};
-      if (!node.properties.operationUnit.observation.target) node.properties.operationUnit.observation.target = {};
-      if (!node.properties.operationUnit.observation.target.primary) node.properties.operationUnit.observation.target.primary = {};
-      node.properties.operationUnit.observation.target.primary.type = 'css';
-      node.properties.operationUnit.observation.target.primary.value = value;
-      this.onNodeUpdate(node);
-    });
+    const properties = [
+      {
+        id: 'action-type',
+        label: '操作类型',
+        type: 'select' as const,
+        value: action.type || 'click',
+        onChange: (value: string) => {
+          if (!node.properties.operationUnit) node.properties.operationUnit = {};
+          if (!node.properties.operationUnit.action) node.properties.operationUnit.action = {};
+          node.properties.operationUnit.action.type = value;
+          this.onNodeUpdate(node);
+        },
+        options: ['click', 'type', 'hover', 'scroll', 'wait'],
+        gridColumn: '1 / -1'
+      },
+      {
+        id: 'css-selector',
+        label: 'CSS选择器',
+        type: 'input' as const,
+        value: observation.target?.primary?.value || '',
+        onChange: (value: string) => {
+          if (!node.properties.operationUnit) node.properties.operationUnit = {};
+          if (!node.properties.operationUnit.observation) node.properties.operationUnit.observation = {};
+          if (!node.properties.operationUnit.observation.target) node.properties.operationUnit.observation.target = {};
+          if (!node.properties.operationUnit.observation.target.primary) node.properties.operationUnit.observation.target.primary = {};
+          node.properties.operationUnit.observation.target.primary.type = 'css';
+          node.properties.operationUnit.observation.target.primary.value = value;
+          this.onNodeUpdate(node);
+        },
+        gridColumn: '1 / -1'
+      },
+      {
+        id: 'timeout',
+        label: '超时时间 (ms)',
+        type: 'input' as const,
+        value: observation.timeout_ms?.toString() || '5000',
+        onChange: (value: string) => {
+          if (!node.properties.operationUnit.observation) node.properties.operationUnit.observation = {};
+          node.properties.operationUnit.observation.timeout_ms = parseInt(value) || 5000;
+          this.onNodeUpdate(node);
+        },
+        inputType: 'number'
+      }
+    ];
 
     // Text Content (for type action)
     if (action.type === 'type') {
-      const textContent = action.parameters?.text || '';
-      this.createPropertyCard('text-content-card', 'Text to Type', 'textarea', textContent, (value) => {
-        if (!node.properties.operationUnit.action.parameters) node.properties.operationUnit.action.parameters = {};
-        node.properties.operationUnit.action.parameters.text = value;
-        this.onNodeUpdate(node);
+      properties.push({
+        id: 'text-content',
+        label: '输入文本',
+        type: 'textarea' as const,
+        value: action.parameters?.text || '',
+        onChange: (value: string) => {
+          if (!node.properties.operationUnit.action.parameters) node.properties.operationUnit.action.parameters = {};
+          node.properties.operationUnit.action.parameters.text = value;
+          this.onNodeUpdate(node);
+        }
       });
     }
 
-    // Timeout
-    this.createPropertyCard('timeout-card', 'Timeout (ms)', 'input', observation.timeout_ms?.toString() || '5000', (value) => {
-      if (!node.properties.operationUnit.observation) node.properties.operationUnit.observation = {};
-      node.properties.operationUnit.observation.timeout_ms = parseInt(value) || 5000;
-      this.onNodeUpdate(node);
-    }, false, undefined, 'number');
+    this.createGridPropertiesLayout(properties);
   }
 
   public renderConditionalProperties(node: BaseNode): void {
-    this.createPropertyCard('condition-card', 'Condition', 'textarea', node.properties.condition || '', (value) => {
-      node.properties.condition = value;
-      this.onNodeUpdate(node);
-    });
+    this.createGridPropertiesLayout([
+      {
+        id: 'condition',
+        label: '条件表达式',
+        type: 'textarea',
+        value: node.properties.condition || '',
+        onChange: (value) => {
+          node.properties.condition = value;
+          this.onNodeUpdate(node);
+        },
+        gridColumn: '1 / -1'
+      }
+    ]);
   }
 
   public renderLoopProperties(node: BaseNode): void {
-    this.createPropertyCard('max-iterations-card', 'Max Iterations', 'input', node.properties.maxIterations?.toString() || '10', (value) => {
-      node.properties.maxIterations = parseInt(value) || 10;
-      this.onNodeUpdate(node);
-    }, false, undefined, 'number');
+    this.createGridPropertiesLayout([
+      {
+        id: 'max-iterations',
+        label: '最大迭代次数',
+        type: 'input',
+        value: node.properties.maxIterations?.toString() || '10',
+        onChange: (value) => {
+          node.properties.maxIterations = parseInt(value) || 10;
+          this.onNodeUpdate(node);
+        },
+        inputType: 'number'
+      }
+    ]);
   }
 
   public renderDisplayProperties(node: BaseNode): void {
-    // 显示格式选项
-    this.createPropertyCard('display-format-card', 'Display Format', 'select', node.properties.displayFormat || 'json', (value) => {
-      node.properties.displayFormat = value;
-      this.onNodeUpdate(node);
-    }, false, ['json', 'table', 'tree']);
-
-    // 最大展示深度
-    this.createPropertyCard('max-depth-card', 'Max Display Depth', 'input', node.properties.maxDepth?.toString() || '3', (value) => {
-      node.properties.maxDepth = parseInt(value) || 3;
-      this.onNodeUpdate(node);
-    }, false, undefined, 'number');
-
-    // 是否显示数据类型
-    this.createPropertyCard('show-types-card', 'Show Data Types', 'select', node.properties.showTypes ? 'true' : 'false', (value) => {
-      node.properties.showTypes = value === 'true';
-      this.onNodeUpdate(node);
-    }, false, ['true', 'false']);
-
-    // 折叠模式
-    this.createPropertyCard('collapse-mode-card', 'Initial Collapse Mode', 'select', node.properties.collapseMode || 'first-level', (value) => {
-      node.properties.collapseMode = value;
-      this.onNodeUpdate(node);
-    }, false, ['expanded', 'first-level', 'collapsed']);
+    this.createGridPropertiesLayout([
+      {
+        id: 'display-format',
+        label: '显示格式',
+        type: 'select',
+        value: node.properties.displayFormat || 'json',
+        onChange: (value) => {
+          node.properties.displayFormat = value;
+          this.onNodeUpdate(node);
+        },
+        options: ['json', 'table', 'tree']
+      },
+      {
+        id: 'max-depth',
+        label: '最大展示深度',
+        type: 'input',
+        value: node.properties.maxDepth?.toString() || '3',
+        onChange: (value) => {
+          node.properties.maxDepth = parseInt(value) || 3;
+          this.onNodeUpdate(node);
+        },
+        inputType: 'number'
+      },
+      {
+        id: 'show-types',
+        label: '显示数据类型',
+        type: 'select',
+        value: node.properties.showTypes ? 'true' : 'false',
+        onChange: (value) => {
+          node.properties.showTypes = value === 'true';
+          this.onNodeUpdate(node);
+        },
+        options: ['true', 'false']
+      },
+      {
+        id: 'collapse-mode',
+        label: '初始折叠模式',
+        type: 'select',
+        value: node.properties.collapseMode || 'first-level',
+        onChange: (value) => {
+          node.properties.collapseMode = value;
+          this.onNodeUpdate(node);
+        },
+        options: ['expanded', 'first-level', 'collapsed']
+      }
+    ]);
   }
 
   public renderContentGeneratorProperties(node: BaseNode): void {
-    // 模板选择
-    this.createPropertyCard('template-card', 'Content Template', 'select', node.properties.templateName || 'user-profile', (value) => {
-      node.properties.templateName = value;
-      this.onNodeUpdate(node);
-    }, false, ['user-profile', 'product-catalog', 'task-list', 'api-response']);
-
-    // 自定义数量
-    this.createPropertyCard('custom-count-card', 'Item Count', 'input', node.properties.customCount?.toString() || '5', (value) => {
-      node.properties.customCount = parseInt(value) || 5;
-      this.onNodeUpdate(node);
-    }, false, undefined, 'number');
-
-    // 数据合并模式（当有输入时）
-    this.createPropertyCard('merge-mode-card', 'Input Merge Mode', 'select', node.properties.mergeMode || 'extend', (value) => {
-      node.properties.mergeMode = value;
-      this.onNodeUpdate(node);
-    }, false, ['extend', 'wrap', 'replace']);
-
-    // 包含时间戳
-    this.createPropertyCard('include-timestamp-card', 'Include Timestamp', 'select', node.properties.includeTimestamp ? 'true' : 'false', (value) => {
-      node.properties.includeTimestamp = value === 'true';
-      this.onNodeUpdate(node);
-    }, false, ['true', 'false']);
+    this.createGridPropertiesLayout([
+      {
+        id: 'template',
+        label: '模板选择',
+        type: 'select',
+        value: node.properties.templateName || 'user-profile',
+        onChange: (value) => {
+          node.properties.templateName = value;
+          this.onNodeUpdate(node);
+        },
+        options: ['user-profile', 'product-catalog', 'task-list', 'api-response'],
+        gridColumn: '1 / -1'
+      },
+      {
+        id: 'count',
+        label: '生成数量',
+        type: 'input',
+        value: node.properties.customCount?.toString() || '5',
+        onChange: (value) => {
+          node.properties.customCount = parseInt(value) || 5;
+          this.onNodeUpdate(node);
+        },
+        inputType: 'number'
+      },
+      {
+        id: 'timestamp',
+        label: '包含时间戳',
+        type: 'select',
+        value: node.properties.includeTimestamp ? 'true' : 'false',
+        onChange: (value) => {
+          node.properties.includeTimestamp = value === 'true';
+          this.onNodeUpdate(node);
+        },
+        options: ['true', 'false']
+      }
+    ]);
   }
 
   public renderJsonMergerProperties(node: BaseNode): void {
-    // 合并策略
-    this.createPropertyCard('merge-strategy-card', 'Merge Strategy', 'select', node.properties.mergeStrategy || 'merge', (value) => {
-      node.properties.mergeStrategy = value;
-      this.onNodeUpdate(node);
-    }, false, ['merge', 'replace', 'append', 'custom']);
-
-    // 合并键
-    this.createPropertyCard('merge-key-card', 'Merge Key', 'input', node.properties.mergeKey || 'merged', (value) => {
-      node.properties.mergeKey = value;
-      this.onNodeUpdate(node);
-    });
-
-    // 冲突解决策略
-    this.createPropertyCard('conflict-resolution-card', 'Conflict Resolution', 'select', node.properties.conflictResolution || 'input2-wins', (value) => {
-      node.properties.conflictResolution = value;
-      this.onNodeUpdate(node);
-    }, false, ['input1-wins', 'input2-wins', 'combine']);
-
-    // 深度合并
-    this.createPropertyCard('deep-merge-card', 'Deep Merge', 'select', node.properties.deepMerge ? 'true' : 'false', (value) => {
-      node.properties.deepMerge = value === 'true';
-      this.onNodeUpdate(node);
-    }, false, ['true', 'false']);
-
-    // 保留数组
-    this.createPropertyCard('preserve-arrays-card', 'Preserve Arrays', 'select', node.properties.preserveArrays ? 'true' : 'false', (value) => {
-      node.properties.preserveArrays = value === 'true';
-      this.onNodeUpdate(node);
-    }, false, ['true', 'false']);
+    this.createGridPropertiesLayout([
+      {
+        id: 'merge-strategy',
+        label: '合并策略',
+        type: 'select',
+        value: node.properties.mergeStrategy || 'merge',
+        onChange: (value) => {
+          node.properties.mergeStrategy = value;
+          this.onNodeUpdate(node);
+        },
+        options: ['merge', 'replace', 'append', 'custom'],
+        gridColumn: '1 / -1'
+      },
+      {
+        id: 'merge-key',
+        label: '合并键',
+        type: 'input',
+        value: node.properties.mergeKey || 'merged',
+        onChange: (value) => {
+          node.properties.mergeKey = value;
+          this.onNodeUpdate(node);
+        }
+      },
+      {
+        id: 'conflict-resolution',
+        label: '冲突解决',
+        type: 'select',
+        value: node.properties.conflictResolution || 'input2-wins',
+        onChange: (value) => {
+          node.properties.conflictResolution = value;
+          this.onNodeUpdate(node);
+        },
+        options: ['input1-wins', 'input2-wins', 'combine']
+      },
+      {
+        id: 'deep-merge',
+        label: '深度合并',
+        type: 'select',
+        value: node.properties.deepMerge ? 'true' : 'false',
+        onChange: (value) => {
+          node.properties.deepMerge = value === 'true';
+          this.onNodeUpdate(node);
+        },
+        options: ['true', 'false']
+      },
+      {
+        id: 'preserve-arrays',
+        label: '保留数组',
+        type: 'select',
+        value: node.properties.preserveArrays ? 'true' : 'false',
+        onChange: (value) => {
+          node.properties.preserveArrays = value === 'true';
+          this.onNodeUpdate(node);
+        },
+        options: ['true', 'false']
+      }
+    ]);
   }
 
   public renderJsonFilterProperties(node: BaseNode): void {
-    // 过滤模式
-    this.createPropertyCard('filter-mode-card', 'Filter Mode', 'select', node.properties.filterMode || 'include', (value) => {
-      node.properties.filterMode = value;
-      this.onNodeUpdate(node);
-    }, false, ['include', 'exclude', 'transform', 'validate']);
-
-    // 过滤路径
-    this.createPropertyCard('filter-paths-card', 'Filter Paths', 'textarea', (node.properties.filterPaths || ['user.name', 'user.email']).join('\n'), (value) => {
-      node.properties.filterPaths = value.split('\n').filter(path => path.trim());
-      this.onNodeUpdate(node);
-    });
-
-    // 保持结构
-    this.createPropertyCard('preserve-structure-card', 'Preserve Structure', 'select', node.properties.preserveStructure ? 'true' : 'false', (value) => {
-      node.properties.preserveStructure = value === 'true';
-      this.onNodeUpdate(node);
-    }, false, ['true', 'false']);
-
-    // 允许空结果
-    this.createPropertyCard('allow-empty-card', 'Allow Empty Results', 'select', node.properties.allowEmptyResults ? 'true' : 'false', (value) => {
-      node.properties.allowEmptyResults = value === 'true';
-      this.onNodeUpdate(node);
-    }, false, ['true', 'false']);
-
-    // 包含元数据
-    this.createPropertyCard('include-metadata-card', 'Include Metadata', 'select', node.properties.includeMetadata !== false ? 'true' : 'false', (value) => {
-      node.properties.includeMetadata = value === 'true';
-      this.onNodeUpdate(node);
-    }, false, ['true', 'false']);
+    this.createGridPropertiesLayout([
+      {
+        id: 'filter-mode',
+        label: '过滤模式',
+        type: 'select',
+        value: node.properties.filterMode || 'include',
+        onChange: (value) => {
+          node.properties.filterMode = value;
+          this.onNodeUpdate(node);
+        },
+        options: ['include', 'exclude', 'transform', 'validate'],
+        gridColumn: '1 / -1'
+      },
+      {
+        id: 'filter-paths',
+        label: '过滤路径',
+        type: 'textarea',
+        value: (node.properties.filterPaths || ['user.name', 'user.email']).join('\n'),
+        onChange: (value) => {
+          node.properties.filterPaths = value.split('\n').filter(path => path.trim());
+          this.onNodeUpdate(node);
+        },
+        gridColumn: '1 / -1'
+      },
+      {
+        id: 'preserve-structure',
+        label: '保持结构',
+        type: 'select',
+        value: node.properties.preserveStructure ? 'true' : 'false',
+        onChange: (value) => {
+          node.properties.preserveStructure = value === 'true';
+          this.onNodeUpdate(node);
+        },
+        options: ['true', 'false']
+      },
+      {
+        id: 'allow-empty',
+        label: '允许空结果',
+        type: 'select',
+        value: node.properties.allowEmptyResults ? 'true' : 'false',
+        onChange: (value) => {
+          node.properties.allowEmptyResults = value === 'true';
+          this.onNodeUpdate(node);
+        },
+        options: ['true', 'false']
+      },
+      {
+        id: 'include-metadata',
+        label: '包含元数据',
+        type: 'select',
+        value: node.properties.includeMetadata !== false ? 'true' : 'false',
+        onChange: (value) => {
+          node.properties.includeMetadata = value === 'true';
+          this.onNodeUpdate(node);
+        },
+        options: ['true', 'false'],
+        gridColumn: '1 / -1'
+      }
+    ]);
   }
 
   // 浏览器工作流节点属性渲染方法
@@ -345,6 +482,117 @@ export class NodePropertyRenderers {
       node.properties.outputContainersJson = value;
       this.onNodeUpdate(node);
     });
+  }
+
+  private createGridPropertiesLayout(properties: Array<{
+    id: string;
+    label: string;
+    type: 'input' | 'textarea' | 'select';
+    value: string;
+    onChange: ((value: string) => void) | null;
+    readonly?: boolean;
+    options?: string[];
+    inputType?: string;
+    gridColumn?: string;
+  }>): void {
+    // 创建网格容器卡片
+    const gridCard = new Card({
+      id: 'properties-grid-card',
+      title: '',
+      className: 'property-grid-card',
+      centered: false,
+      bordered: false
+    });
+
+    // 创建网格容器
+    const gridContainer = document.createElement('div');
+    gridContainer.style.cssText = `
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      width: 100%;
+    `;
+
+    properties.forEach(prop => {
+      const container = document.createElement('div');
+      if (prop.gridColumn) {
+        container.style.gridColumn = prop.gridColumn;
+      }
+      if (prop.gridColumn === '1 / -1') {
+        container.style.marginBottom = '4px';
+      }
+      
+      const label = document.createElement('div');
+      label.textContent = prop.label;
+      label.style.cssText = `
+        color: #cccccc;
+        font-size: 12px;
+        font-weight: 500;
+        margin-bottom: 4px;
+      `;
+      
+      let input: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+
+      if (prop.type === 'select' && prop.options) {
+        input = document.createElement('select');
+        prop.options.forEach(option => {
+          const optionEl = document.createElement('option');
+          optionEl.value = option;
+          optionEl.textContent = option;
+          optionEl.selected = option === prop.value;
+          input.appendChild(optionEl);
+        });
+      } else if (prop.type === 'textarea') {
+        input = document.createElement('textarea');
+        input.value = prop.value;
+      } else {
+        input = document.createElement('input');
+        input.type = prop.inputType || 'text';
+        input.value = prop.value;
+      }
+
+      Object.assign(input.style, {
+        width: '100%',
+        padding: '8px 10px',
+        background: '#3a3a3a',
+        border: '1px solid #505050',
+        borderRadius: '4px',
+        color: '#ffffff',
+        fontSize: '12px',
+        boxSizing: 'border-box'
+      });
+
+      if (prop.type === 'textarea') {
+        input.style.height = '80px';
+        input.style.resize = 'vertical';
+      }
+
+      input.addEventListener('focus', () => {
+        input.style.borderColor = '#FFC107';
+      });
+
+      input.addEventListener('blur', () => {
+        input.style.borderColor = '#505050';
+      });
+
+      if (prop.readonly) {
+        input.disabled = true;
+      }
+
+      if (prop.onChange) {
+        input.addEventListener('input', (e) => {
+          const target = e.target as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+          prop.onChange!(target.value);
+        });
+      }
+
+      container.appendChild(label);
+      container.appendChild(input);
+      gridContainer.appendChild(container);
+    });
+
+    gridCard.setContent(gridContainer);
+    this.rootCard.addChild(gridCard);
   }
 
   private createPropertyCard(
