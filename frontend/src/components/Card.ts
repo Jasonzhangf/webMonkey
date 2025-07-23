@@ -43,6 +43,20 @@ export class Card {
       const titleElement = document.createElement('div');
       titleElement.className = 'card-title';
       titleElement.textContent = this.config.title;
+      
+      // Apply compact title styles
+      Object.assign(titleElement.style, {
+        fontSize: '11px',
+        fontWeight: '600',
+        color: '#cccccc',
+        marginBottom: '6px',
+        textAlign: 'center',
+        textTransform: 'uppercase',
+        letterSpacing: '0.5px',
+        paddingBottom: '4px',
+        borderBottom: '1px solid #404040'
+      });
+      
       this.element.appendChild(titleElement);
     }
 
@@ -60,9 +74,9 @@ export class Card {
       position: 'relative',
       boxSizing: 'border-box',
       backgroundColor: '#2d2d2d',
-      borderRadius: '8px',
-      padding: '12px',
-      margin: '4px',
+      borderRadius: '6px',
+      padding: '8px',
+      margin: '2px',
       width: 'auto',
       height: 'auto',
       minWidth: 'fit-content',
@@ -94,7 +108,7 @@ export class Card {
       flexDirection: 'column',
       alignItems: this.config.centered ? 'center' : 'stretch',
       justifyContent: this.config.centered ? 'center' : 'flex-start',
-      gap: '4px'
+      gap: '2px'
     });
   }
 

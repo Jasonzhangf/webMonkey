@@ -32,6 +32,9 @@ export class Sidebar {
     
     // Set initial empty state
     this.showEmptyState();
+    
+    // 添加响应式支持
+    this.initializeResponsiveLayout();
   }
 
   public show(node: BaseNode): void {
@@ -39,6 +42,12 @@ export class Sidebar {
     this.currentNode = node;
     this.sidebarElement.classList.add('open');
     this.renderNodeProperties(node);
+    
+    // 确保布局正确并完全可见
+    setTimeout(() => {
+      this.adjustSidebarLayout();
+      this.ensureFullyVisible();
+    }, 350); // 等待动画完成
   }
 
   public hide(): void {
@@ -384,6 +393,154 @@ export class Sidebar {
   private updateCardTitle(): void {
     if (this.nodeSpecificCard && this.currentNode) {
       this.nodeSpecificCard.updateTitle(`🎯 ${this.currentNode.type} 专属配置`);
+    }
+  }
+
+  /**
+   * 初始化响应式布局支持
+   */
+  private initializeResponsiveLayout(): void {
+    // 监听窗口大小变化
+    window.addEventListener('resize', () => {
+      this.adjustSidebarLayout();
+    });
+
+    // 监听sidebar打开状态变化
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+          const isOpen = this.sidebarElement.classList.contains('open');
+          if (isOpen) {
+            this.adjustSidebarLayout();
+          }
+        }
+      });
+    });
+
+    observer.observe(this.sidebarElement, { 
+      attributes: true, 
+      attributeFilter: ['class'] 
+    });
+
+    // 初始布局调整
+    this.adjustSidebarLayout();
+  }
+
+  /**
+   * 调整sidebar布局以确保完全可见
+   */
+  private adjustSidebarLayout(): void {
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    
+    // 确保sidebar高度正确
+    this.sidebarElement.style.height = `${viewportHeight}px`;
+    
+    // 调整内容区域的最大高度
+    const titleHeight = 60; // 标题区域高度
+    const padding = 30; // 内边距
+    const maxContentHeight = viewportHeight - titleHeight - padding;
+    
+    this.contentElement.style.maxHeight = `${maxContentHeight}px`;
+    
+    // 在小屏幕上优化显示
+    if (viewportWidth < 600) {
+      this.optimizeForMobile();
+    } else if (viewportWidth < 900) {
+      this.optimizeForTablet();
+    } else {
+      this.optimizeForDesktop();
+    }
+  }
+
+  /**
+   * 移动端优化
+   */
+  private optimizeForMobile(): void {
+    // 移动端sidebar从底部滑出
+    this.sidebarElement.style.height = '70vh';
+    this.sidebarElement.style.top = '30vh';
+    
+    // 调整卡片间距
+    this.adjustCardSpacing('mobile');
+  }
+
+  /**
+   * 平板端优化
+   */
+  private optimizeForTablet(): void {
+    // 平板端保持侧边栏，但缩小宽度
+    this.sidebarElement.style.height = '100vh';
+    this.sidebarElement.style.top = '0';
+    
+    // 调整卡片间距
+    this.adjustCardSpacing('tablet');
+  }
+
+  /**
+   * 桌面端优化
+   */
+  private optimizeForDesktop(): void {
+    // 桌面端正常显示
+    this.sidebarElement.style.height = '100vh';
+    this.sidebarElement.style.top = '0';
+    
+    // 调整卡片间距
+    this.adjustCardSpacing('desktop');
+  }
+
+  /**
+   * 根据设备类型调整卡片间距
+   */
+  private adjustCardSpacing(deviceType: 'mobile' | 'tablet' | 'desktop'): void {
+    const cards = [
+      this.defaultPropertiesCard,
+      this.portsCard,
+      this.nodeSpecificCard
+    ].filter(card => card !== null);
+
+    cards.forEach(card => {
+      if (card) {
+        const element = card.getElement();
+        switch (deviceType) {
+          case 'mobile':
+            element.style.margin = '4px 0';
+            element.style.padding = '8px';
+            break;
+          case 'tablet':
+            element.style.margin = '6px 0'; 
+            element.style.padding = '10px';
+            break;
+          case 'desktop':
+            element.style.margin = '8px 0';
+            element.style.padding = '12px';
+            break;
+        }
+      }
+    });
+  }
+
+  /**
+   * 确保sidebar内容在视口内完全可见
+   */
+  public ensureFullyVisible(): void {
+    if (!this.sidebarElement.classList.contains('open')) {
+      return;
+    }
+
+    const sidebarRect = this.sidebarElement.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const viewportWidth = window.innerWidth;
+
+    // 检查是否超出视口
+    if (sidebarRect.bottom > viewportHeight) {
+      console.warn('Sidebar content extends beyond viewport height');
+      this.adjustSidebarLayout();
+    }
+
+    if (sidebarRect.right > viewportWidth) {
+      console.warn('Sidebar extends beyond viewport width');
+      this.adjustSidebarLayout();
     }
   }
 }

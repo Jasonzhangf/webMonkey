@@ -76,9 +76,6 @@ export class CanvasEditor {
     new UIPanel(
       this.nodeRegistry.getAllNodeTypeNames(),
       this.addNode.bind(this),
-      this.saveWorkflow.bind(this),
-      this.loadWorkflow.bind(this),
-      this.runWorkflow.bind(this),
       this // 传递CanvasEditor实例给UIPanel
     );
 
@@ -97,10 +94,10 @@ export class CanvasEditor {
     // 异步初始化工作流存储系统
     this.initializeStorageSystem();
     
-    // 创建工作流工具栏
-    const toolbarContainer = this.createToolbarContainer();
-    container.appendChild(toolbarContainer);
-    this.initializeWorkflowToolbar(toolbarContainer);
+    // 创建工作流工具栏 - 已被UIPanel左侧边栏替代，避免重复UI
+    // const toolbarContainer = this.createToolbarContainer();
+    // container.appendChild(toolbarContainer);
+    // this.initializeWorkflowToolbar(toolbarContainer);
 
     // 初始化编辑器
     this.initialize();
@@ -111,18 +108,19 @@ export class CanvasEditor {
     // storageService 将在异步初始化完成后设置编辑器引用
   }
   
-  private createToolbarContainer(): HTMLElement {
-    const toolbarContainer = document.createElement('div');
-    toolbarContainer.id = 'workflow-toolbar-container';
-    toolbarContainer.style.cssText = `
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      z-index: 1000;
-      width: 200px;
-    `;
-    return toolbarContainer;
-  }
+  // 已被UIPanel替代，避免重复UI
+  // private createToolbarContainer(): HTMLElement {
+  //   const toolbarContainer = document.createElement('div');
+  //   toolbarContainer.id = 'workflow-toolbar-container';
+  //   toolbarContainer.style.cssText = `
+  //     position: fixed;
+  //     top: 20px;
+  //     left: 20px;
+  //     z-index: 1000;
+  //     width: 200px;
+  //   `;
+  //   return toolbarContainer;
+  // }
 
   private initialize(): void {
     this.renderer.resizeCanvas();
@@ -473,17 +471,17 @@ export class CanvasEditor {
     }
   }
   
-  // 异步初始化工作流工具栏
-  private async initializeWorkflowToolbar(container: HTMLElement): Promise<void> {
-    try {
-      const { WorkflowToolbar } = await import('../storage');
-      this.workflowToolbar = new WorkflowToolbar(container);
-      console.log('✅ Workflow toolbar initialized successfully');
-    } catch (error) {
-      console.error('❌ Failed to initialize workflow toolbar:', error);
-      this.workflowToolbar = null;
-    }
-  }
+  // 已被UIPanel替代，避免重复UI
+  // private async initializeWorkflowToolbar(container: HTMLElement): Promise<void> {
+  //   try {
+  //     const { WorkflowToolbar } = await import('../storage');
+  //     this.workflowToolbar = new WorkflowToolbar(container);
+  //     console.log('✅ Workflow toolbar initialized successfully');
+  //   } catch (error) {
+  //     console.error('❌ Failed to initialize workflow toolbar:', error);
+  //     this.workflowToolbar = null;
+  //   }
+  // }
   
   // 添加连接 - 供WorkflowLoader调用
   public addConnection(connection: Connection): boolean {
